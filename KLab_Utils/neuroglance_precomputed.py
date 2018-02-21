@@ -11,6 +11,7 @@ import neuroglancer
 import dxchange
 import argparse
 import os, signal
+import subprocess
 import re
 from .neuroglance_raw import omni_read
 
@@ -38,20 +39,24 @@ def glance_precomputed(viewer, image=None, labels=None, port=41000):
     return viewer.get_viewer_url()
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument( '--precomputed', default=None)
+    parser.add_argument( 'precomputed', default=None)
     #parser.add_argument( '--labels', default=None)
-    parser.add_argument( '--p', type=int, default=42000 )
+    parser.add_argument( '--server_port', type=int, default=41000 )
+    parser.add_argument( '--client_port', type=int, default=42000 )
     args = parser.parse_args()
     #neuroglancer.set_static_content_source(url='http://localhost:8080')
 
-    neuroglancer.set_server_bind_address(bind_address='127.0.0.1', bind_port=args.p)
+    neuroglancer.set_server_bind_address(bind_address='127.0.0.1', bind_port=args.client_port)
     viewer = neuroglancer.Viewer()
     def dummy():
         print('hello callback')
     #viewer.defer_callback(dummy)
     image_path = os.path.join(args.precomputed , 'image')
     labels_path = os.path.join(args.precomputed , 'labels')
-    url = glance_precomputed(viewer=viewer, image=image_path, labels=labels_path)
+
+    #subprocess.call('http-server --cors -p '+str(args.server_port), shell=False)
+    #os.system('http-server --headless -macro '+self.ijm_file)
+    url = glance_precomputed(viewer=viewer, image=image_path, labels=labels_path, port=args.server_port)
     print(url)
     webbrowser.open_new_tab(url)
 

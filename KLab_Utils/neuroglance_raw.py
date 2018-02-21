@@ -29,7 +29,7 @@ def omni_read(f_input, begin=None, end=None):
     '''support tiff, tiff stack, hdf5'''
     if not f_input: return None
     matches = re.match(r'^(?P<dirname>.*)/(?P<fname>.*)\.(?P<ext>[^:]*)($|:(?P<dataset>.*$))', f_input)
-    print(matches.groupdict())
+    #print(matches.groupdict())
     if matches['ext'] == 'tif' or matches['ext'] == 'tiff':
         if begin is not None and end is not None:
             data = dxchange.read_tiff_stack(f_input, ind=range(begin,end))

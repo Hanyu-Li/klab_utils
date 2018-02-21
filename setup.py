@@ -14,6 +14,8 @@ entry_points = {
 install_requires = [
     'knossos_utils',
     'matplotlib',
+    'scipy',
+    'cloud-volume',
     'dxchange',
 ]
 setup(
