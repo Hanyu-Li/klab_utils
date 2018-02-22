@@ -1,3 +1,2 @@
 knossos_utils
-matplotlib
-dxchange
+dxchange>=0.1.4

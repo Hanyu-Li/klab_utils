@@ -8,15 +8,13 @@ entry_points = {
         'fiji_stitch = KLab_Utils.fiji_stitch:main',
         'neuroglance_raw = KLab_Utils.neuroglance_raw:main',
         'neuroglance_precomputed = KLab_Utils.neuroglance_precomputed:main',
-        'raw_to_precompute = KLab_Utils.raw_to_precompute:main'
+        'neuroglance_public = KLab_Utils.neuroglance_public:main',
+        'raw_to_precomputed = KLab_Utils.raw_to_precomputed:main'
     ]
 }
 install_requires = [
     'knossos_utils',
-    'matplotlib',
-    'scipy',
-    'cloud-volume',
-    'dxchange',
+    'dxchange>=0.1.4',
 ]
 setup(
     name='KLab_Utils',

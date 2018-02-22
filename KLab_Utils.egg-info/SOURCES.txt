@@ -11,7 +11,8 @@ KLab_Utils/neuroglance_precomputed.py
 KLab_Utils/neuroglance_public.py
 KLab_Utils/neuroglance_raw.py
 KLab_Utils/qt_test.py
-KLab_Utils/raw_to_precompute.py
+KLab_Utils/raw_to_precomputed.py
+KLab_Utils/reader.py
 KLab_Utils.egg-info/PKG-INFO
 KLab_Utils.egg-info/SOURCES.txt
 KLab_Utils.egg-info/dependency_links.txt

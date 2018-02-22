@@ -13,12 +13,13 @@ import argparse
 import os, signal
 import subprocess
 import re
-from .neuroglance_raw import omni_read
+from .reader import omni_read
 
-def glance_precomputed(viewer, image=None, labels=None, port=41000):
+def glance_precomputed(viewer, image=None,host='localhost', labels=None, port=41000):
     '''supply cloud paths'''
     if image: 
         image_path = 'precomputed://http://localhost:{}/'.format(port)+os.path.relpath(image)
+        #image_path = 'precomputed://'+image
         #image_path = 'precomputed://ftp://localhost/cloud_test'
         #image_path = 'precomputed://http://localhost:41000'
         print('Image Source:', image_path)
