@@ -29,9 +29,9 @@ def omni_read(f_input, begin=None, end=None):
         if begin is not None and end is not None:
             data = dxchange.read_tiff_stack(f_input, ind=range(begin,end))
         else:
-            print(f_input)
+            #print(f_input)
             S,L = check_stack_len(f_input)
-            print(S,L)
+            #print(S,L)
             if L > 1:
                 data = dxchange.read_tiff_stack(f_input, ind=range(S,S+L))
             else:
@@ -44,3 +44,11 @@ def omni_read(f_input, begin=None, end=None):
     else:
         print('not implemented file type')
     return data
+
+def omni_generator(f_input, begin=0, end=64, step=64):
+    for i in range(begin, end, step):
+        if i+step > end:
+            data = dxchange.read_tiff_stack(f_input, ind=range(i,end))
+        else:
+            data = dxchange.read_tiff_stack(f_input, ind=range(i,i+step))
+        yield (i,data)

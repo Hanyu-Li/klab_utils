@@ -129,49 +129,49 @@ def main():
 
 
     
-    plt.figure()
-    plt.subplot(221)
-    plt.imshow(data_M)
-    plt.subplot(222)
-    plt.imshow(data_SM)
-    plt.subplot(223)
-    plt.plot(data_C)
-    plt.subplot(224)
-    plt.plot(data_CB)
-    plt.title('Cell Body Diameter')
+    # plt.figure()
+    # plt.subplot(221)
+    # plt.imshow(data_M)
+    # plt.subplot(222)
+    # plt.imshow(data_SM)
+    # plt.subplot(223)
+    # plt.plot(data_C)
+    # plt.subplot(224)
+    # plt.plot(data_CB)
+    # plt.title('Cell Body Diameter')
     
-    data_M = data_M[:]
-    valid_M = data_M[data_M>0]
+    # data_M = data_M[:]
+    # valid_M = data_M[data_M>0]
 
-    data_SM = data_SM[:]
-    valid_SM = data_SM[data_M>0]
+    # data_SM = data_SM[:]
+    # valid_SM = data_SM[data_M>0]
 
-    data_C = data_C[:]
-    valid_C = data_C[data_C>0]
+    # data_C = data_C[:]
+    # valid_C = data_C[data_C>0]
 
-    data_CB = data_CB[:]
-    valid_CB = data_CB[data_CB>0]
-    print(valid_CB.shape)
-    #l_M, hist_M = plt.hist(valid_M)
+    # data_CB = data_CB[:]
+    # valid_CB = data_CB[data_CB>0]
+    # print(valid_CB.shape)
+    # #l_M, hist_M = plt.hist(valid_M)
 
-    plt.figure()
-    plt.subplot(221)
-    plt.hist(valid_M, bins=100)
-    plt.subplot(222)
-    plt.hist(valid_SM, bins=100)
-    plt.subplot(223)
-    plt.hist(valid_, bins=100)
-    plt.subplot(224)
-    plt.hist(valid_M, bins=100)
-    plt.show()
+    # plt.figure()
+    # plt.subplot(221)
+    # plt.hist(valid_M, bins=100)
+    # plt.subplot(222)
+    # plt.hist(valid_SM, bins=100)
+    # plt.subplot(223)
+    # plt.hist(valid_, bins=100)
+    # plt.subplot(224)
+    # plt.hist(valid_M, bins=100)
+    # plt.show()
 
-    sys.exit()
-    #sk2swc_and_center(sk, f_swc, f_center)
+    # sys.exit()
+    # #sk2swc_and_center(sk, f_swc, f_center)
 
-    #print(overlay.shape)
-    #print(np.max(overlay[:]))
-    #overlay = np.rollaxis(overlay,2,0)
-    #overlay = np.rollaxis(overlay,2,1)
-    #dxchange.write_tiff(overlay.astype(np.uint32), 'test.tiff', overwrite=True)
+    # #print(overlay.shape)
+    # #print(np.max(overlay[:]))
+    # #overlay = np.rollaxis(overlay,2,0)
+    # #overlay = np.rollaxis(overlay,2,1)
+    # #dxchange.write_tiff(overlay.astype(np.uint32), 'test.tiff', overwrite=True)
 if __name__ == "__main__":
     main()

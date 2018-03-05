@@ -13,10 +13,11 @@ import argparse
 import os, signal
 import re
 from .reader import omni_read
+from ast import literal_eval as make_tuple
 
-def glance(viewer, image=None, labels=None):
+def glance(viewer, image=None, labels=None, resolution=None):
     with viewer.txn() as s:
-        s.voxel_size = [600, 600, 600]
+        s.voxel_size = resolution
         if image is not None:
             s.layers.append(
                 name='image',
@@ -49,11 +50,13 @@ def main():
     parser.add_argument( '--multi', type=bool, default=False)
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
+    parser.add_argument( '--resolution', type=str, default='(600,600,600)')
     parser.add_argument( '--p', type=int, default=42000 )
     args = parser.parse_args()
 
     image = omni_read(args.image, args.begin, args.end)
     labels = omni_read(args.labels, args.begin, args.end)
+    resolution = make_tuple(args.resolution)
 
     if labels is not None:
         if not args.multi:
@@ -66,9 +69,9 @@ def main():
     def dummy():
         print('hello callback')
     #viewer.defer_callback(dummy)
-    url = glance(viewer=viewer, image=image, labels=labels)
+    url = glance(viewer=viewer, image=image, labels=labels, resolution=resolution)
     print(url)
-    webbrowser.open_new(url)
+    webbrowser.open_new_tab(url)
 
 
     def signal_handler(signal, frame):
