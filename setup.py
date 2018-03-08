@@ -19,10 +19,14 @@ entry_points = {
 }
 install_requires = [
     'knossos_utils',
+    'tqdm',
     'dxchange>=0.1.4',
+    'cloud-volume>=0.0.1',
+    'neuroglancer>=1.0.2'
 ]
 setup(
     name='KLab_Utils',
+    author='Hanyu Li',
     packages=['KLab_Utils'],
     entry_points=entry_points,
     include_package_data=True,
