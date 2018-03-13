@@ -14,14 +14,15 @@ entry_points = {
         'neuroglance_public = KLab_Utils.neuroglance_public:main',
         'raw_to_precomputed = KLab_Utils.raw_to_precomputed:main',
         'generate_mesh = KLab_Utils.generate_mesh:main',
-        'contrast_adjust = KLab_Utils.contrast_adjust:main'
+        'contrast_adjust = KLab_Utils.contrast_adjust:main',
+        'offset_annotation = KLab_Utils.offset_annotation:main'
     ]
 }
 install_requires = [
     'knossos_utils',
     'tqdm',
     'dxchange>=0.1.4',
-    'cloud-volume>=0.0.1',
+    'cloud-volume',
     'neuroglancer>=1.0.2'
 ]
 setup(

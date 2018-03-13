@@ -181,7 +181,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument( '--image', default=None)
     parser.add_argument( '--labels', default=None)
-    parser.add_argument( '--precomputed', default=None)
+    parser.add_argument( '--precomputed', default='./precomputed')
     parser.add_argument( '--multi', type=bool, default=False)
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
@@ -189,18 +189,20 @@ def main():
     parser.add_argument( '--scale', type=int, default=0)
     parser.add_argument( '--large', type=bool, default=False)
     parser.add_argument( '--chunk_size', type=str, default='(64,64,64)')
-    parser.add_argument( '--z_step', type=int, default=256)
+    parser.add_argument( '--z_step', type=int, default=None)
 
 
     
     args = parser.parse_args()
     resolution = make_tuple(args.resolution)
     chunk_size = make_tuple(args.chunk_size)
+    if not args.z_step:
+        z_step = int(chunk_size[0]) * 2 ** (int(args.scale)-1)
+        print("z_step:{}".format(z_step))
 
     #image_cloud_path = os.path.join(args.precomputed, 'image')
     #large_local_to_cloud(args.image, image_cloud_path, z_step=args.z_step,
     #    layer_type='image', resolution=resolution, scale=args.scale)
-
 
 
     if args.image is not None: 
@@ -217,6 +219,7 @@ def main():
     if args.labels is not None: 
         labels_cloud_path = os.path.join(args.precomputed, 'labels')
         if not args.large:
+            labels = omni_read(args.labels, args.begin, args.end)
             if not args.multi:
                 labels = np.uint32(np.nan_to_num(labels)>0)
             else:
