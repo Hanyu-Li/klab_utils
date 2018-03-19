@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     labels = omni_read(args.labels)
-    labels_to_skeleton()
+    labels_to_skeleton(labels)
 
 if __name__ == '__main__':
     main()

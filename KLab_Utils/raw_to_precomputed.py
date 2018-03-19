@@ -212,7 +212,7 @@ def main():
             #print(image.shape, image.dtype)
             local_to_cloud(image, image_cloud_path, layer_type='image', resolution=resolution, scale=args.scale)
         else:
-            large_local_to_cloud(args.image, image_cloud_path, begin=args.begin, end=args.end, chunk_size=chunk_size, z_step=args.z_step,
+            large_local_to_cloud(args.image, image_cloud_path, begin=args.begin, end=args.end, chunk_size=chunk_size, z_step=z_step,
                 layer_type='image', resolution=resolution, scale=args.scale)
 
 
