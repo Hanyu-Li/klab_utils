@@ -6,7 +6,7 @@ function parse_commandline()
         "--params"
             help = "a positional argument"
             required = false
-            default = "/mnt/md0/KLab_Util_test/Alembic_test/local_params/new_try.json"
+            default = "/mnt/md0/KLab_Util_test/Alembic_test/local_params/fly.json"
             
     end
 
@@ -23,9 +23,10 @@ function main()
     println(params)
     load_params(params)
     ms = make_stack(); # make meshset given the params specified in the JSON file
+    #println(ms)
     match!(ms); # blockmatch between the meshes in the meshset, per the params
-    elastic_solve!(ms); # relax the spring system
-    render(ms); # render the images and save to CloudVolume
+    #solve!(ms); # relax the spring system
+    #render(ms); # render the images and save to CloudVolume
 
 end
 

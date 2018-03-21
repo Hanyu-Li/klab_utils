@@ -15,7 +15,11 @@ entry_points = {
         'raw_to_precomputed = KLab_Utils.raw_to_precomputed:main',
         'generate_mesh = KLab_Utils.generate_mesh:main',
         'contrast_adjust = KLab_Utils.contrast_adjust:main',
-        'offset_annotation = KLab_Utils.offset_annotation:main'
+        'offset_annotation = KLab_Utils.offset_annotation:main',
+        'EM_preprocess = KLab_Utils.EM_preprocessor:main',
+        'EM_trackEM2_preprocess = KLab_Utils.EM_trackEM2_preprocess:main',
+        'generate_prealign_txt = KLab_Utils.generate_prealign_txt:main'
+
     ]
 }
 install_requires = [
