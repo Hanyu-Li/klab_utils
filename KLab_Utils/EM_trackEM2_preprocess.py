@@ -115,8 +115,7 @@ class EM_preprocessor(object):
 
 
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input')
     parser.add_argument('--output', default=None)
@@ -127,4 +126,6 @@ if __name__ == '__main__':
     emp.run()
     
     sys.exit()
+if __name__ == '__main__':
+    main()
     

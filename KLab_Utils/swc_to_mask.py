@@ -23,23 +23,25 @@ def swc_to_mask(f_cube, f_swc, f_output):
     f_tiff_output = os.path.join(f_output, 'stack')
 
     f_mask = os.path.join(f_output, 'output_mask')
-
+    f_v3d = os.path.join(f_output, 'output_mask.v3draw')
     kd = knossosdataset.KnossosDataset()
     kd.initialize_from_knossos_path(f_cube)
     print(kd._experiment_name)
     print(kd.boundary)
-    z,x,y = kd.boundary
+    x,y,z = kd.boundary
+    #z,x,y = kd.boundary
 
-    command = r'vaa3d -x swc_to_maskimage_sphere -f swc_to_maskimage -i {} -p {} {} {} -o {}.v3draw'.format(f_swc, str(x), str(y), str(z), f_mask)
-    fiji_command = r'run("Convert...", "input={} output={} output_format=TIFF interpolation=Bilinear scale=1"); '.format(f_output, f_output)
-    f_fiji = os.path.join(f_output, 'tmp.ijm')
+    command = r'vaa3d -x swc_to_maskimage_sphere -f swc_to_maskimage -i {} -p {} {} {} -o {}.tiff'.format(f_swc, str(x), str(y), str(z), f_mask)
+    print(command)
+    #fiji_command = r'run("Convert...", "input={} output={} output_format=TIFF interpolation=Bilinear scale=1"); '.format(f_output, f_output)
+    #print(fiji_command)
+    #f_fiji = os.path.join(f_output, 'tmp.ijm')
     f_log = os.path.join(f_output, 'log.txt')
-    with open(f_fiji, 'w') as f:
-        f.write(fiji_command+'\n')
-    run_fiji_command = r'fiji -macro {}'.format(f_fiji)
-
+    #with open(f_fiji, 'w') as f:
+        #f.write(fiji_command+'\n')
+    #run_fiji_command = r'fiji -macro {}'.format(f_fiji)
     subprocess.call(command, shell=True)
-    subprocess.call(run_fiji_command, shell=True) 
+    #subprocess.call(run_fiji_command, shell=True) 
     #os.system(run_fiji_command)
 def main():
     parser = argparse.ArgumentParser()

@@ -18,7 +18,9 @@ entry_points = {
         'offset_annotation = KLab_Utils.offset_annotation:main',
         'EM_preprocess = KLab_Utils.EM_preprocessor:main',
         'EM_trackEM2_preprocess = KLab_Utils.EM_trackEM2_preprocess:main',
-        'generate_prealign_txt = KLab_Utils.generate_prealign_txt:main'
+        'generate_prealign_txt = KLab_Utils.generate_prealign_txt:main',
+        'rename_trackEM2 = KLab_Utils.rename_trackEM2:main'
+
 
     ]
 }

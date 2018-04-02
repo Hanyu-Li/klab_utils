@@ -15,7 +15,7 @@ from ast import literal_eval as make_tuple
 from tqdm import tqdm
 from pprint import pprint
 class EM_preprocessor(object):
-    def __init__(self, input_dir, output_dir):
+    def __init__(self, input_dir, output_dir, re_index):
         self.input_dir = os.path.abspath(input_dir)
         self.output_dir = os.path.abspath(output_dir)
 
@@ -28,6 +28,15 @@ class EM_preprocessor(object):
         self.output_dir = output_dir
         #self.flist = None
         self.flist = glob.glob(os.path.join(self.input_dir, '*.tif*'))
+        if re_index:
+            #print(self.flist)
+            #ind = [int(re.match(r'^.*/.*_z(?P<index>[0-9]+).(.*)$', f).groupdict('index')['index']) for f in self.flist]
+            #print(ind)
+            get_index = lambda f: int(re.match(r'^.*/.*_z(?P<index>[0-9]+).(.*)$', f).groupdict('index')['index'])
+
+            self.flist.sort(key=get_index)
+            #print(self.flist)
+        
         #print(len(glob_list))
         #self.flist = glob_list
         #matches = re.match(r'^.*/.*(?P<index>[0-9]+).(tif*)$',self.input_dir)
@@ -87,9 +96,10 @@ class EM_preprocessor(object):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, help='dir containing the stack, with *[id].tif')
-    parser.add_argument('--output', default=None)
+    parser.add_argument('--output', default='.')
+    parser.add_argument('--re_index', default=False)
     args = parser.parse_args()
-    emp = EM_preprocessor(args.input, args.output)
+    emp = EM_preprocessor(args.input, args.output, args.re_index)
     emp.run()
     
     sys.exit()
