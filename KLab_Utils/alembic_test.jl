@@ -6,7 +6,7 @@ function parse_commandline()
         "--params"
             help = "a positional argument"
             required = false
-            default = "/mnt/md0/KLab_Util_test/Alembic_test/local_params/new_try.json"
+            default = "/mnt/md0/KLab_Util_test/Alembic_test/local_params/aligned_vol.json"
             
     end
 
@@ -27,7 +27,7 @@ function main()
 
     #println(ms)
     match!(ms); # blockmatch between the meshes in the meshset, per the params
-    solve!(ms); # relax the spring system
+    elastic_solve!(ms); # relax the spring system
     render(ms); # render the images and save to CloudVolume
 
 end

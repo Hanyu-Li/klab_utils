@@ -45,6 +45,7 @@ def local_to_cloud(data, cloud_path, layer_type=None, resolution=None, scale=0):
     '''currently support 
         layer_type: 'image' or 'segmentation'
         resolution: tuple of 3 '''
+    data = np.moveaxis(data, 0, 2)
     if not os.path.exists(cloud_path):
         os.makedirs(cloud_path)
 
@@ -84,6 +85,7 @@ def large_data_generator(stack_name, begin=0, end=64, step=64, dtype=None, multi
         if dtype:
             data = data.astype(dtype)
         #print(data.shape)
+        data = np.moveaxis(data, 0, 2)
         yield (i,data)
     pass
 
