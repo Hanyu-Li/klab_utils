@@ -103,8 +103,8 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
 
     first_slice = dxchange.read_tiff(data_path)
     X,Y = first_slice.shape
-    volume_size = (L,X,Y)
-
+    #volume_size = (L,X,Y)
+    volume_size = (X,Y,L)
     if not dtype:
         data_type = first_slice.dtype
     else:
@@ -141,7 +141,9 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
         #continue
         for j in range(0,scale):    
             vol = CloudVolume('file://'+cloud_path, mip=j,compress='') # Basic Example
-            z,x,y = vol.volume_size
+            #z,x,y = vol.volume_size
+            x,y,z = vol.volume_size
+            
             #print(z,x,y)
             if j == 0 and i+curr_z_step >= z:
                 curr_z_step = z-curr_z_start
@@ -151,14 +153,19 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
                 #data = zoom(data, 0.5)
                 #print(z,x,y)
                 data = data[::2,::2,::2]
-                data = data[0:z, 0:x, 0:y]
+                #data = data[0:z, 0:x, 0:y]
+                data = data[0:x, 0:y, 0:z]
+            
+            
                 #print(data.shape)
 
 
             #print(curr_z_start, curr_z_start+curr_z_step, vol.volume_size, data.shape)
             #print(z,x,y)
             #print(curr_z_start, curr_z_step)
-            vol[curr_z_start:curr_z_start+curr_z_step,:,:] = data[:curr_z_step,:,:]
+            print(data.shape)
+            #vol[curr_z_start:curr_z_start+curr_z_step,:,:] = data[:curr_z_step,:,:]
+            vol[:,:,curr_z_start:curr_z_start+curr_z_step] = data[:,:,:curr_z_step]
             curr_z_start //= 2
             curr_z_step //= 2
 
@@ -201,6 +208,8 @@ def main():
     if not args.z_step:
         z_step = int(chunk_size[0]) * 2 ** (int(args.scale)-1)
         print("z_step:{}".format(z_step))
+    else:
+        z_step = args.z_step
 
     #image_cloud_path = os.path.join(args.precomputed, 'image')
     #large_local_to_cloud(args.image, image_cloud_path, z_step=args.z_step,
@@ -229,7 +238,7 @@ def main():
             print(labels.shape, labels.dtype)
             local_to_cloud(labels, labels_cloud_path, layer_type='segmentation', resolution=resolution, scale=args.scale)
         else:
-            large_local_to_cloud(args.labels, labels_cloud_path, begin=args.begin, end=args.end, dtype='uint32', multi=args.multi, z_step=args.z_step,
+            large_local_to_cloud(args.labels, labels_cloud_path, begin=args.begin, end=args.end, dtype='uint32', multi=args.multi, z_step=z_step,
                 layer_type='segmentation', resolution=resolution, scale=args.scale)
             
     

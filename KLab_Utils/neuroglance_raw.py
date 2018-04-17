@@ -58,6 +58,9 @@ def main():
     labels = omni_read(args.labels, args.begin, args.end)
     resolution = make_tuple(args.resolution)
 
+    if image.dtype != np.uint8:
+        print('not 8bit')
+        image = image * 255
     if labels is not None:
         if not args.multi:
             # only a single object

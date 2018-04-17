@@ -23,6 +23,7 @@ def check_stack_len(f_name):
 def omni_read(f_input, begin=None, end=None):
     '''support tiff, tiff stack, hdf5'''
     if not f_input: return None
+    f_input = os.path.abspath(f_input)
     matches = re.match(r'^(?P<dirname>.*)/(?P<fname>.*)\.(?P<ext>[^:]*)($|:(?P<dataset>.*$))', f_input)
     #print(matches.groupdict())
     if matches['ext'] == 'tif' or matches['ext'] == 'tiff':
