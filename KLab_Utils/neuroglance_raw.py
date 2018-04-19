@@ -47,7 +47,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument( '--image', default=None)
     parser.add_argument( '--labels', default=None)
-    parser.add_argument( '--multi', type=bool, default=False)
+    parser.add_argument( '--multi', default=False)
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
     parser.add_argument( '--resolution', type=str, default='(600,600,600)')

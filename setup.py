@@ -14,12 +14,14 @@ entry_points = {
         'neuroglance_public = KLab_Utils.neuroglance_public:main',
         'raw_to_precomputed = KLab_Utils.raw_to_precomputed:main',
         'generate_mesh = KLab_Utils.generate_mesh:main',
+        'generate_mesh_manifest = KLab_Utils.generate_mesh_manifest:main',
         'contrast_adjust = KLab_Utils.contrast_adjust:main',
         'offset_annotation = KLab_Utils.offset_annotation:main',
         'EM_preprocess = KLab_Utils.EM_preprocessor:main',
         'EM_trackEM2_preprocess = KLab_Utils.EM_trackEM2_preprocess:main',
         'generate_prealign_txt = KLab_Utils.generate_prealign_txt:main',
-        'rename_trackEM2 = KLab_Utils.rename_trackEM2:main'
+        'rename_trackEM2 = KLab_Utils.rename_trackEM2:main',
+        'mesh_generator = KLab_Utils.mesh_generator:main'
 
 
     ]
@@ -27,9 +29,10 @@ entry_points = {
 install_requires = [
     'knossos_utils',
     'tqdm',
-    'dxchange>=0.1.4',
+    'dxchange',
     'cloud-volume',
-    'neuroglancer>=1.0.2'
+    'neuroglancer',
+    'igneous'
 ]
 setup(
     name='KLab_Utils',

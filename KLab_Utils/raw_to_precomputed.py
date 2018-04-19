@@ -70,8 +70,8 @@ def local_to_cloud(data, cloud_path, layer_type=None, resolution=None, scale=0):
         vol = CloudVolume('file://'+cloud_path, mip=i,compress='') # Basic Example
         if i > 0:
             data = zoom(data, 0.5)
-            z,x,y = vol.volume_size
-            data = data[0:z, 0:x, 0:y]
+            x,y,z = vol.volume_size
+            data = data[0:x, 0:y, 0:z]
         print(vol.volume_size, data.shape)
         vol[:,:,:] = data
 def large_data_generator(stack_name, begin=0, end=64, step=64, dtype=None, multi=False):
@@ -191,12 +191,12 @@ def main():
     parser.add_argument( '--image', default=None)
     parser.add_argument( '--labels', default=None)
     parser.add_argument( '--precomputed', default='./precomputed')
-    parser.add_argument( '--multi', type=bool, default=False)
+    parser.add_argument( '--multi', default=False)
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
     parser.add_argument( '--resolution', type=str, default='(10,10,10)')
     parser.add_argument( '--scale', type=int, default=0)
-    parser.add_argument( '--large', type=bool, default=False)
+    parser.add_argument( '--large', default=False)
     parser.add_argument( '--chunk_size', type=str, default='(64,64,64)')
     parser.add_argument( '--z_step', type=int, default=None)
 
