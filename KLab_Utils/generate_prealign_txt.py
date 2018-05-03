@@ -15,7 +15,7 @@ from ast import literal_eval as make_tuple
 from tqdm import tqdm
 from pprint import pprint
 class EM_preprocessor(object):
-    def __init__(self, input_dir, output_dir, re_index):
+    def __init__(self, input_dir, output_dir, trackem2_index):
         self.input_dir = os.path.abspath(input_dir)
         self.output_dir = os.path.abspath(output_dir)
 
@@ -28,7 +28,7 @@ class EM_preprocessor(object):
         self.output_dir = output_dir
         #self.flist = None
         self.flist = glob.glob(os.path.join(self.input_dir, '*.tif*'))
-        if re_index:
+        if trackem2_index:
             #print(self.flist)
             #ind = [int(re.match(r'^.*/.*_z(?P<index>[0-9]+).(.*)$', f).groupdict('index')['index']) for f in self.flist]
             #print(ind)
@@ -36,7 +36,15 @@ class EM_preprocessor(object):
 
             self.flist.sort(key=get_index)
             #print(self.flist)
-        
+        else:
+            get_index = lambda f: int(re.match(r'^.*/.*_(?P<index>[0-9]+)\.(.*)$', f).groupdict('index')['index'])
+            self.flist.sort(key=get_index)
+
+        #for f in self.flist:
+        #    ind = re.match(r'^.*/.*(?P<index>[0-9]+).(.*)$', f).groupdict()['index']
+        #    print(f,ind)
+        #pprint(get_index(self.flist[100]))
+
         #print(len(glob_list))
         #self.flist = glob_list
         #matches = re.match(r'^.*/.*(?P<index>[0-9]+).(tif*)$',self.input_dir)
@@ -75,7 +83,7 @@ class EM_preprocessor(object):
         with open(f_align_txt,'w') as output:
             for i,f in enumerate(self.flist):
                 command = '{}\t{}\t{}\t{}\n'.format(f, '0','0',str(i))
-                print(command)
+                #print(command)
                 output.write(command)
         
     def run(self):
@@ -97,9 +105,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, help='dir containing the stack, with *[id].tif')
     parser.add_argument('--output', default='.')
-    parser.add_argument('--re_index', default=False)
+    parser.add_argument('--trackem2_index', default=False, help='wether the tiff stack uses trackem2 style "*z[id].0.tif" indexing ')
     args = parser.parse_args()
-    emp = EM_preprocessor(args.input, args.output, args.re_index)
+    emp = EM_preprocessor(args.input, args.output, args.trackem2_index)
     emp.run()
     
     sys.exit()

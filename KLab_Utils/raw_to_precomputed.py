@@ -163,7 +163,7 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
             #print(curr_z_start, curr_z_start+curr_z_step, vol.volume_size, data.shape)
             #print(z,x,y)
             #print(curr_z_start, curr_z_step)
-            print(data.shape)
+            #print(data.shape)
             #vol[curr_z_start:curr_z_start+curr_z_step,:,:] = data[:curr_z_step,:,:]
             vol[:,:,curr_z_start:curr_z_start+curr_z_step] = data[:,:,:curr_z_step]
             curr_z_start //= 2
@@ -194,33 +194,27 @@ def main():
     parser.add_argument( '--multi', default=False)
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
-    parser.add_argument( '--resolution', type=str, default='(10,10,10)')
-    parser.add_argument( '--scale', type=int, default=0)
+    parser.add_argument( '--resolution', type=str, default='10,10,10')
+    parser.add_argument( '--scale', type=int, default=1)
     parser.add_argument( '--large', default=False)
-    parser.add_argument( '--chunk_size', type=str, default='(64,64,64)')
+    parser.add_argument( '--chunk_size', type=str, default='64,64,64')
     parser.add_argument( '--z_step', type=int, default=None)
 
 
     
     args = parser.parse_args()
-    resolution = make_tuple(args.resolution)
-    chunk_size = make_tuple(args.chunk_size)
+    resolution = tuple(int(d) for d in args.resolution.split(','))
+    chunk_size = tuple(int(d) for d in args.chunk_size.split(','))
     if not args.z_step:
         z_step = int(chunk_size[0]) * 2 ** (int(args.scale)-1)
         print("z_step:{}".format(z_step))
     else:
         z_step = args.z_step
 
-    #image_cloud_path = os.path.join(args.precomputed, 'image')
-    #large_local_to_cloud(args.image, image_cloud_path, z_step=args.z_step,
-    #    layer_type='image', resolution=resolution, scale=args.scale)
-
-
     if args.image is not None: 
         image_cloud_path = os.path.join(args.precomputed, 'image')
         if not args.large:
             image = omni_read(args.image, args.begin, args.end)
-            #print(image.shape, image.dtype)
             local_to_cloud(image, image_cloud_path, layer_type='image', resolution=resolution, scale=args.scale)
         else:
             large_local_to_cloud(args.image, image_cloud_path, begin=args.begin, end=args.end, chunk_size=chunk_size, z_step=z_step,

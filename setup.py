@@ -32,7 +32,7 @@ install_requires = [
     'dxchange',
     'cloud-volume',
     'neuroglancer',
-    'igneous'
+    #'igneous'
 ]
 setup(
     name='KLab_Utils',

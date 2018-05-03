@@ -50,15 +50,16 @@ def main():
     parser.add_argument( '--multi', default=False)
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
-    parser.add_argument( '--resolution', type=str, default='(600,600,600)')
+    parser.add_argument( '--resolution', type=str, default='600,600,600')
     parser.add_argument( '--p', type=int, default=42000 )
     args = parser.parse_args()
 
     image = omni_read(args.image, args.begin, args.end)
     labels = omni_read(args.labels, args.begin, args.end)
-    resolution = make_tuple(args.resolution)
+    #resolution = make_tuple(args.resolution)
+    resolution = tuple(int(d) for d in args.resolution.split(','))
 
-    if image.dtype != np.uint8:
+    if image.dtype == np.float32:
         print('not 8bit')
         image = image * 255
     if labels is not None:

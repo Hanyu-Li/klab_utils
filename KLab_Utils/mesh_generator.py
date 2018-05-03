@@ -5,6 +5,7 @@ from queue import Queue
 import numpy as np
 from mpi4py import MPI
 from tqdm import tqdm
+import sys
 import argparse
 import subprocess
 
@@ -51,12 +52,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument( 'labels', default=None, help="path to precomputed labels")
     parser.add_argument( '--verbose', default=False, help="wether to use progressbar")
+    parser.add_argument( '--dim_size', default='64,64,64', help="mesh chunksize")
     args = parser.parse_args()
 
     if rank == 0:
         in_path = 'file://'+args.labels
         mip = 0
-        dim_size = (64,64,64)
+        dim_size = tuple(int(d) for d in args.dim_size.split(','))
+        print(dim_size)
 
         print("Making meshes...")
         mtq = mpiTaskQueue()
