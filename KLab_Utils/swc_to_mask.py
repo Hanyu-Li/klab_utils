@@ -20,6 +20,7 @@ def swc_to_mask(f_cube, f_swc, f_output):
 
     f_cube = os.path.abspath(f_cube)
     f_output = os.path.abspath(f_output)
+    f_swc = os.path.abspath(f_swc)
     f_tiff_output = os.path.join(f_output, 'stack')
 
     f_mask = os.path.join(f_output, 'output_mask')

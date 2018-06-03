@@ -195,8 +195,8 @@ def main():
     parser.add_argument( '--begin', type=int, default=None)
     parser.add_argument( '--end', type=int, default=None)
     parser.add_argument( '--resolution', type=str, default='10,10,10')
-    parser.add_argument( '--scale', type=int, default=1)
-    parser.add_argument( '--large', default=False)
+    parser.add_argument( '--scale', type=int, default=3)
+    parser.add_argument( '--large', default=True)
     parser.add_argument( '--chunk_size', type=str, default='64,64,64')
     parser.add_argument( '--z_step', type=int, default=None)
 

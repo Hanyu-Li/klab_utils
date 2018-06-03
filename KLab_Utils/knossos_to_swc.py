@@ -171,7 +171,7 @@ def main():
     parser.add_argument('--cube', default='../full_stack_rot_knossos/mag1/knossos.conf')
     parser.add_argument('--anno', default='../trace/')
     parser.add_argument('--output', default='.')
-    parser.add_argument('--features', type=str, choices=['both','cellbody','dendrite'],default='both')
+    parser.add_argument('--features', type=str, choices=['both','cellbody','dendrite','mask'],default='both')
 
     args = parser.parse_args()
     f_knossos = args.cube
@@ -196,6 +196,8 @@ def main():
         sk2swc_cellbody_and_center(sk, f_swc, f_center)
     elif args.features == 'dendrite':
         sk2swc_dendrite_and_center(sk, f_swc, f_center)
+    elif args.features == 'mask':
+        sk.toSWC(f_swc)
 
     #sys.exit()
     #print(overlay.shape)

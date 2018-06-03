@@ -30,8 +30,8 @@ install_requires = [
     'knossos_utils',
     'tqdm',
     'dxchange',
-    'cloud-volume',
-    'neuroglancer',
+    #'cloud-volume',
+    #'neuroglancer',
     #'igneous'
 ]
 setup(
