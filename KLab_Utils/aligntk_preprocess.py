@@ -11,7 +11,7 @@ def main():
   f_images = os.path.join(args.output_dir, 'images.lst')
   f_pairs = os.path.join(args.output_dir, 'pairs.lst')
   image_list = [s.split('.')[0] for s in glob.glob1(args.image_dir, '*.tif*')]
-  print(image_list)
+  image_list.sort()
   with open(f_images, 'w') as f1:
     [f1.write(im+'\n') for im in image_list]
 
