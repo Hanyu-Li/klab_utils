@@ -1,4 +1,12 @@
-#!/usr/env/bin python3
+'''Example Usage.
+raw_to_precomputed \
+--image /mnt/md0/EM/SNEMI/train-input.tif \
+--labels /mnt/md0/EM/SNEMI/train-labels.tif \ 
+--precomputed /mnt/md0/EM/SNEMI/train-precomputed \
+--multi \
+--scale 3 \
+--large False \
+'''
 from __future__ import print_function
 import logging
 import numpy as np
@@ -84,7 +92,6 @@ def large_data_generator(stack_name, begin=0, end=64, step=64, dtype=None, multi
             data = np.nan_to_num(data>0)
         if dtype:
             data = data.astype(dtype)
-        #print(data.shape)
         data = np.moveaxis(data, 0, 2)
         yield (i,data)
     pass
@@ -92,9 +99,11 @@ def large_data_generator(stack_name, begin=0, end=64, step=64, dtype=None, multi
 
 def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None, multi=False,z_step=64,
          layer_type=None, chunk_size=(64,64,64), resolution=None, scale=0):
-    ''' when data is a tiffstack above RAM limit 
-        layer_type: 'image' or 'segmentation'
-        resolution: tuple of 3 '''
+    ''' 
+    when data is a tiffstack above RAM limit 
+    layer_type: 'image' or 'segmentation'
+    resolution: tuple of 3 
+    '''
     if not begin and not end:
         S,L = check_stack_len(data_path) # start and length
     else:
@@ -135,36 +144,18 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
         json.dump(info, f)
 
     for i,data in tqdm(data_generator, total=L//z_step):
-        #print(i, data.shape)
         curr_z_start = i
         curr_z_step = z_step
-        #continue
         for j in range(0,scale):    
             vol = CloudVolume('file://'+cloud_path, mip=j,compress='') # Basic Example
-            #z,x,y = vol.volume_size
             x,y,z = vol.volume_size
             
-            #print(z,x,y)
             if j == 0 and i+curr_z_step >= z:
                 curr_z_step = z-curr_z_start
-            #if j == 0 and layer_type == 'segmentation':
-            #    vol.mesh.get(100)
             if j > 0:
-                #data = zoom(data, 0.5)
-                #print(z,x,y)
                 data = data[::2,::2,::2]
-                #data = data[0:z, 0:x, 0:y]
                 data = data[0:x, 0:y, 0:z]
             
-            
-                #print(data.shape)
-
-
-            #print(curr_z_start, curr_z_start+curr_z_step, vol.volume_size, data.shape)
-            #print(z,x,y)
-            #print(curr_z_start, curr_z_step)
-            #print(data.shape)
-            #vol[curr_z_start:curr_z_start+curr_z_step,:,:] = data[:curr_z_step,:,:]
             vol[:,:,curr_z_start:curr_z_start+curr_z_step] = data[:,:,:curr_z_step]
             curr_z_start //= 2
             curr_z_step //= 2
@@ -172,20 +163,8 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
 
         
     return
-
-    #for i in range(0,scale):    
-    #    vol = CloudVolume('file://'+cloud_path, mip=i,compress='') # Basic Example
-    #    if i > 0:
-    #        data = zoom(data, 0.5)
-    #        z,x,y = vol.volume_size
-    #        data = data[0:z, 0:x, 0:y]
-    #    print(vol.volume_size, data.shape)
-    #    vol[:,:,:] = data
-
-
-
-
     
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument( '--image', default=None)

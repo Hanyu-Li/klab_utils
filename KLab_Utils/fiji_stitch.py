@@ -57,16 +57,6 @@ class Fiji_Stitcher(object):
         self.ijm_file = os.path.join(self.output_dir, 'test.ijm')
         commands = []
         with open(self.ijm_file,'w') as f:
-            ##for fname in self.flist:
-            #print(fname)
-            #matches = re.match(r"(?P<dirname>^.+)/(?P<exp_name>[^/]+)_y(?P<y>[0-9]+)_x(?P<x>[0-9]+).(?P<f_type>tif*)$", fname)
-            #print(matches.groupdict())
-            ##tiles = glob.glob('Tile*.tif')
-            #exp_name = matches['exp_name']
-            #f_type = matches['f_type']
-            
-            #row = int(matches['y'])
-            #col = int(matches['x'])
             if self.cc_flist:
                 FLIST = self.cc_flist
             else:

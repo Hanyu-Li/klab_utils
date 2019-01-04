@@ -8,7 +8,6 @@ import argparse
 import shutil
 import sys
 import cv2
-#import magic
 import re
 from PIL import Image
 from ast import literal_eval as make_tuple
@@ -42,23 +41,15 @@ class EM_preprocessor(object):
         else:
             flist = glob.glob(os.path.join(self.input_dir, 'S_*/*.tif'))
         for fname in tqdm(flist):
-            #print(fname)
             im = cv2.imread(fname,flags=cv2.IMREAD_GRAYSCALE)
-            #print(im.shape)
             RE = re.search('S_([0-9]*)', fname)
             ind = RE.group(1)
-            #prefix_len = len(dataDir)
-
-            #outf = outDir+fname[prefix_len:prefix_len+5]+'.tiff'
             outf = os.path.join(collect_dir, 'S_'+ind+'.tiff')
-            #print(outf)
             tifffile.imsave(outf,im)
 
     def test_one_image(self):
         f_dummy = glob.glob(os.path.join(self.input_dir, 'S_*/Tile*.tif'))[0]
         dummy_data = cv2.imread(f_dummy,flags=cv2.IMREAD_GRAYSCALE)
-        #dummy_data = tifffile.imread(f_dummy)
-        #dummy_data = dummy_data[:,:,0]
         print(dummy_data.shape)
         self.TILE_ROW, self.TILE_COL = dummy_data.shape
         self.TILE_MIN, self.TILE_MAX = np.min(dummy_data[:]), np.max(dummy_data[:])
@@ -73,7 +64,6 @@ class EM_preprocessor(object):
 
 
     def prepare_align_txt(self):
-        #collect_dir = os.path.join(self.output_dir, 'prealignment_stack')
         f_align_txt = os.path.join(self.output_dir, 'align.txt')
         with open(f_align_txt,'w') as output:
             for f in self.flist:
@@ -83,14 +73,12 @@ class EM_preprocessor(object):
 
                 for t in tlist:
                     res = re.search(r'Tile_r([0-9])-c([0-9])_S_([0-9]+)_*', t)     
-                    #print(res.groups())
-                    #print(res.group(1), res.group(2))      
+                    tile_name= os.path.abspath(t)
                     r = res.group(1)
                     c = res.group(2)
                     z = int(res.group(3))
 
-                    #command = t +'\t'+ c +'\t'+ r + '\t' + '0\t' + self.TILE_COL + '\t' + self.TILE_ROW + '\t' + '0\t'+ str(i)+'\n'
-                    command = '{0} \t {1} \t {2} \t {3} \t {4} \t {5} \t {6} \t {7} \t {8} \n'.format(t,c,r,z,self.TILE_COL, self.TILE_ROW, self.TILE_MIN, self.TILE_MAX, self.DTYPE)
+                    command = '{0} \t {1} \t {2} \t {3} \t {4} \t {5} \t {6} \t {7} \t {8} \n'.format(tile_name,c,r,z,self.TILE_COL, self.TILE_ROW, self.TILE_MIN, self.TILE_MAX, self.DTYPE)
                     print(command)
                     output.write(command)
 
@@ -103,9 +91,7 @@ class EM_preprocessor(object):
         self.flist= glob.glob(os.path.join(self.input_dir,'S_*'))
         get_index = lambda f: int(f.split('/')[-1].split('_')[1])
         self.flist.sort(key=get_index)
-        #pprint(self.flist)
 
-        #self.collect()
         
         # Step 5: prepare TrackEM2 import txt file
         #self.prepare_align_txt(self.input_dir, self.input_dir)
@@ -121,7 +107,6 @@ def main():
     parser.add_argument('--output', default=None)
     args = parser.parse_args()
     rootDir = os.getcwd()
-    #dataDir ='/home/vandana/Desktop/Section_Set_4/'
     emp = EM_preprocessor(args.input, args.output)
     emp.run()
     

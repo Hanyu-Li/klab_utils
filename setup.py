@@ -21,7 +21,8 @@ entry_points = {
         'EM_trackEM2_preprocess = KLab_Utils.EM_trackEM2_preprocess:main',
         'generate_prealign_txt = KLab_Utils.generate_prealign_txt:main',
         'rename_trackEM2 = KLab_Utils.rename_trackEM2:main',
-        'mesh_generator = KLab_Utils.mesh_generator:main'
+        'mesh_generator = KLab_Utils.mesh_generator:main',
+        'aligntk_preprocess = KLab_Utils.aligntk_preprocess:main'
 
 
     ]
@@ -29,7 +30,7 @@ entry_points = {
 install_requires = [
     'knossos_utils',
     'tqdm',
-    'dxchange',
+    #'dxchange',
     #'cloud-volume',
     #'neuroglancer',
     #'igneous'
