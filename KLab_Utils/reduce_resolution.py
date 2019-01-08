@@ -20,7 +20,8 @@ def main():
   print('Downsample Ratio: ', downsample_ratio)
 
   for t in tqdm(tiles):
-    dirname, filename = t.split('/')[-2:]
+    dirname = os.path.basename(os.path.dirname(t))
+    filename = os.path.basename(t)
     os.makedirs(os.path.join(args.output_dir, dirname), exist_ok=True)
     f_out = os.path.join(args.output_dir, dirname, filename)
     im = cv2.imread(t, 0)
