@@ -22,7 +22,8 @@ entry_points = {
         'generate_prealign_txt = KLab_Utils.generate_prealign_txt:main',
         'rename_trackEM2 = KLab_Utils.rename_trackEM2:main',
         'mesh_generator = KLab_Utils.mesh_generator:main',
-        'aligntk_preprocess = KLab_Utils.aligntk_preprocess:main'
+        'aligntk_preprocess = KLab_Utils.aligntk_preprocess:main',
+        'reduce_resolution = KLab_Utils.reduce_resolution:main'
 
 
     ]
