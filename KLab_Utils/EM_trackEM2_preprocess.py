@@ -79,22 +79,18 @@ class EM_preprocessor(object):
                     z = int(res.group(3))
 
                     command = '{0} \t {1} \t {2} \t {3} \t {4} \t {5} \t {6} \t {7} \t {8} \n'.format(tile_name,c,r,z,self.TILE_COL, self.TILE_ROW, self.TILE_MIN, self.TILE_MAX, self.DTYPE)
-                    print(command)
                     output.write(command)
 
         
     def run(self):
         print("Input:", self.input_dir)
         print("Output:", self.output_dir)
-
     
         self.flist= glob.glob(os.path.join(self.input_dir,'S_*'))
-        get_index = lambda f: int(f.split('/')[-1].split('_')[1])
-        self.flist.sort(key=get_index)
-
+        get_index = lambda f: re.search(r'([0-9]+)', os.path.basename(f)).group(1)
         
-        # Step 5: prepare TrackEM2 import txt file
-        #self.prepare_align_txt(self.input_dir, self.input_dir)
+        self.flist.sort(key=get_index)
+        
         self.test_one_image()
         self.prepare_align_txt()
 
@@ -110,7 +106,6 @@ def main():
     emp = EM_preprocessor(args.input, args.output)
     emp.run()
     
-    sys.exit()
 if __name__ == '__main__':
     main()
     
