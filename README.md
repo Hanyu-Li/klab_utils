@@ -1,4 +1,4 @@
-# KLab_Utils
+# klab_utils
 
 A toolbox of scripts facilitating connectomics data processing. Interfaces with a few popular frameworks like Knossos, TrackEM2, neuroglancer and Cloud-Volume
 
