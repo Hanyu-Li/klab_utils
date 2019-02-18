@@ -13,6 +13,7 @@ entry_points = {
         'neuroglance_precomputed = klab_utils.neuroglance_precomputed:main',
         'neuroglance_public = klab_utils.neuroglance_public:main',
         'raw_to_precomputed = klab_utils.raw_to_precomputed:main',
+        'raw_to_precomputed_MPI = klab_utils.raw_to_precomputed_MPI:main',
         'generate_mesh = klab_utils.generate_mesh:main',
         'generate_mesh_manifest = klab_utils.generate_mesh_manifest:main',
         'contrast_adjust = klab_utils.contrast_adjust:main',

@@ -61,8 +61,8 @@ def main():
                         help="wether to use progressbar")
     parser.add_argument('--dim_size', default='64,64,64',
                         help="mesh chunksize")
-    parser.add_argument('--simplification_factor', default=10, type=int,
-                        help="simplification_factor")
+    # parser.add_argument('--simplification_factor', default=10, type=int,
+    #                     help="simplification_factor")
     parser.add_argument('--max_simplification_error', default=40, type=int,
                         help="max_simplification_error")
 
@@ -80,7 +80,7 @@ def main():
             layer_path=in_path, 
             mip=mip, 
             shape=Vec(*dim_size),
-            simplification_factor=args.simplification_factor,
+            # simplification_factor=args.simplification_factor,
             max_simplification_error=args.max_simplification_error,
             mesh_dir='mesh')
 

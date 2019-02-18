@@ -98,7 +98,7 @@ def large_data_generator(stack_name, begin=0, end=64, step=64, dtype=None, multi
 
 
 def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None, multi=False,z_step=64,
-         layer_type=None, chunk_size=(64,64,64), resolution=None, scale=0):
+         layer_type=None, chunk_size=(64,64,64), resolution=None, scale=0, flip_axes=True):
     ''' 
     when data is a tiffstack above RAM limit 
     layer_type: 'image' or 'segmentation'
@@ -112,8 +112,10 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
 
     first_slice = dxchange.read_tiff(data_path)
     X,Y = first_slice.shape
-    #volume_size = (L,X,Y)
-    volume_size = (X,Y,L)
+    if flip_axes:
+        volume_size = (L,Y,X)
+    else:
+        volume_size = (X,Y,L)
     if not dtype:
         data_type = first_slice.dtype
     else:
@@ -148,36 +150,52 @@ def large_local_to_cloud(data_path, cloud_path, begin=None, end=None, dtype=None
         curr_z_step = z_step
         for j in range(0,scale):    
             vol = CloudVolume('file://'+cloud_path, mip=j,compress='') # Basic Example
-            x,y,z = vol.volume_size
-            
-            if j == 0 and i+curr_z_step >= z:
-                curr_z_step = z-curr_z_start
-            if j > 0:
-                data = data[::2,::2,::2]
-                data = data[0:x, 0:y, 0:z]
-            
-            vol[:,:,curr_z_start:curr_z_start+curr_z_step] = data[:,:,:curr_z_step]
-            curr_z_start //= 2
-            curr_z_step //= 2
 
+            if flip_axes:
+                pass
+                data = np.transpose(data, [2,1,0])
+                z,y,x = vol.volume_size
+                if j == 0 and i+curr_z_step >= z:
+                    curr_z_step = z-curr_z_start
+                if j > 0:
+                    data = data[::2,::2,::2]
+                    data = data[0:z, 0:y, 0:x]
 
+                print(data.shape)
+                vol[curr_z_start:curr_z_start+curr_z_step, :, :] = data[:curr_z_step,:,:]
+                curr_z_start //= 2
+                curr_z_step //= 2        
+            else:
+                x,y,z = vol.volume_size
+                
+                if j == 0 and i+curr_z_step >= z:
+                    curr_z_step = z-curr_z_start
+                if j > 0:
+                    data = data[::2,::2,::2]
+                    data = data[0:x, 0:y, 0:z]
+
+                print(data.shape)
+                vol[:,:,curr_z_start:curr_z_start+curr_z_step] = data[:,:,:curr_z_step]
+                curr_z_start //= 2
+                curr_z_step //= 2        
         
     return
     
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument( '--image', default=None)
-    parser.add_argument( '--labels', default=None)
-    parser.add_argument( '--precomputed', default='./precomputed')
-    parser.add_argument( '--multi', default=False)
-    parser.add_argument( '--begin', type=int, default=None)
-    parser.add_argument( '--end', type=int, default=None)
-    parser.add_argument( '--resolution', type=str, default='10,10,10')
-    parser.add_argument( '--scale', type=int, default=3)
-    parser.add_argument( '--large', default=True)
-    parser.add_argument( '--chunk_size', type=str, default='64,64,64')
-    parser.add_argument( '--z_step', type=int, default=None)
+    parser.add_argument('--image', default=None)
+    parser.add_argument('--labels', default=None)
+    parser.add_argument('--precomputed', default='./precomputed')
+    parser.add_argument('--multi', default=False)
+    parser.add_argument('--begin', type=int, default=None)
+    parser.add_argument('--end', type=int, default=None)
+    parser.add_argument('--resolution', type=str, default='10,10,10')
+    parser.add_argument('--scale', type=int, default=3)
+    parser.add_argument('--large', default=True)
+    parser.add_argument('--chunk_size', type=str, default='64,64,64')
+    parser.add_argument('--z_step', type=int, default=None)
+    parser.add_argument('--flip_axes', type=bool, default=False)
 
 
     
@@ -197,7 +215,7 @@ def main():
             local_to_cloud(image, image_cloud_path, layer_type='image', resolution=resolution, scale=args.scale)
         else:
             large_local_to_cloud(args.image, image_cloud_path, begin=args.begin, end=args.end, chunk_size=chunk_size, z_step=z_step,
-                layer_type='image', resolution=resolution, scale=args.scale)
+                layer_type='image', resolution=resolution, scale=args.scale, flip_axes=args.flip_axes)
 
 
     if args.labels is not None: 
@@ -212,7 +230,7 @@ def main():
             local_to_cloud(labels, labels_cloud_path, layer_type='segmentation', resolution=resolution, scale=args.scale)
         else:
             large_local_to_cloud(args.labels, labels_cloud_path, begin=args.begin, end=args.end, dtype='uint32', multi=args.multi, z_step=z_step,
-                layer_type='segmentation', resolution=resolution, scale=args.scale)
+                layer_type='segmentation', resolution=resolution, scale=args.scale, flip_axes=args.flip_axes)
             
     
 
