@@ -229,7 +229,7 @@ def main():
             print(labels.shape, labels.dtype)
             local_to_cloud(labels, labels_cloud_path, layer_type='segmentation', resolution=resolution, scale=args.scale)
         else:
-            large_local_to_cloud(args.labels, labels_cloud_path, begin=args.begin, end=args.end, dtype='uint32', multi=args.multi, z_step=z_step,
+            large_local_to_cloud(args.labels, labels_cloud_path, begin=args.begin, end=args.end, chunk_size=chunk_size, dtype='uint32', multi=args.multi, z_step=z_step,
                 layer_type='segmentation', resolution=resolution, scale=args.scale, flip_axes=args.flip_axes)
             
     
