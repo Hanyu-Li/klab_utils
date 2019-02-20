@@ -107,7 +107,7 @@ def main():
         sub_ranges = np.array_split(all_range, size)
     else:
         sub_ranges = None
-        mtq = None
+        mtq2 = None
 
     sub_ranges = comm.bcast(sub_ranges, root=0)
     mtq2 = comm.bcast(mtq2, root=0)

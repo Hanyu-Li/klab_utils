@@ -24,6 +24,8 @@ entry_points = {
         'rename_trackEM2 = klab_utils.rename_trackEM2:main',
         'mesh_generator = klab_utils.mesh_generator:main',
         'aligntk_preprocess = klab_utils.aligntk_preprocess:main',
+        'aligntk_cut_to_eight = klab_utils.aligntk_cut_to_eight:main',
+        'aligntk_gen_mask = klab_utils.aligntk_gen_mask:main',
         'reduce_resolution = klab_utils.reduce_resolution:main'
 
 

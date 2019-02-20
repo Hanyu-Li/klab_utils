@@ -109,7 +109,7 @@ def demo():
     ax3.legend(loc=2)
     plt.show()
 
-def run(f_input, f_output, stack_begin, stack_end, z_step):
+def run(f_input, f_output, stack_begin, stack_end, z_step ):
     ''' f_input: first slice of a tiff stack
         f_output: output dir
     '''
@@ -117,10 +117,8 @@ def run(f_input, f_output, stack_begin, stack_end, z_step):
     ref = omni_read(f_input, begin=stack_begin, end=stack_begin+1)
     x1, y1 = ecdf(ref)
 
-    #bin_edges = [0, 50, 100, 150, 200, 255]
-    #quantiles = [y1[e] for e in bin_edges]
 
-    quantiles = np.arange(0.1,1,0.1)
+    quantiles = np.arange(0.1,1,0.025)
     bin_edges = [np.where(y1>q)[0][0] for q in quantiles[:]]
 
     print(bin_edges)
