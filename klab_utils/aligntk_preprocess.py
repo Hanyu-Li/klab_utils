@@ -28,7 +28,7 @@ def main():
   # Write individual groups
   image_sets = {}
   pairs_sets = {}
-  groups = len(image_list)  // args.group_size 
+  groups = len(image_list)  // args.group_size + 1
 
   
   # set_size = len(image_list) // args.groups + 1
