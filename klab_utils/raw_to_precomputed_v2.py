@@ -69,7 +69,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, data_type, mip,
     chunk_size, resolution, memory_limit=32):
     '''Converts a stack of images to cloudvolume.'''
     if mpi_rank == 0:
-        f_list = glob.glob(os.path.join(input_dir, '*'))
+        f_list = glob.glob(os.path.join(input_dir, '*.*'))
         f_list.sort()
         os.makedirs(output_dir, exist_ok=True)
         im0 = cv2.imread(f_list[0], 0)
@@ -81,7 +81,9 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, data_type, mip,
         print('single_image_size: \t %.4f GB' % im_size)
         print('total_size: \t\t %.4f GB' % (im_size * Z))
         print('mpi_proc: \t\t %d' % mpi_size)
-        print('total_limit: \t\t %.4f GB' % memory_limit)
+        #print('total_limit: \t\t %.4f GB' % memory_limit)
+        print('peak memory: \t\t %.4f GB' % (im_size * chunk_size[2] * mpi_size))
+        
         f_sublist = divide_work(f_list, mpi_size, chunk_size[2], im_size, memory_limit)
         c_path = 'file://' + os.path.join(output_dir, 'images')
         factor = [2,2,1]
