@@ -13,6 +13,7 @@ entry_points = {
         'neuroglance_precomputed = klab_utils.neuroglance_precomputed:main',
         'neuroglance_public = klab_utils.neuroglance_public:main',
         'raw_to_precomputed = klab_utils.raw_to_precomputed:main',
+        'raw_to_precomputed_v2 = klab_utils.raw_to_precomputed_v2:main',
         'raw_to_precomputed_MPI = klab_utils.raw_to_precomputed_MPI:main',
         'generate_mesh = klab_utils.generate_mesh:main',
         'generate_mesh_manifest = klab_utils.generate_mesh_manifest:main',
@@ -26,8 +27,12 @@ entry_points = {
         'aligntk_preprocess = klab_utils.aligntk_preprocess:main',
         'aligntk_cut_to_eight = klab_utils.aligntk_cut_to_eight:main',
         'aligntk_gen_mask = klab_utils.aligntk_gen_mask:main',
+        'aligntk_gen_mask_v2 = klab_utils.aligntk_gen_mask_v2:main',
+        'aligntk_merge_masks = klab_utils.aligntk_merge_masks:main',
+        'aligntk_cut = klab_utils.aligntk_cut:main',
+        'aligntk_contrast_adjust = klab_utils.aligntk_contrast_adjust:main',
+        'aligntk_preview = klab_utils.aligntk_preview:main',
         'reduce_resolution = klab_utils.reduce_resolution:main'
-
 
     ]
 }
