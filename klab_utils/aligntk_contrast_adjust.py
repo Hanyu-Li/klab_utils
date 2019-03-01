@@ -117,6 +117,8 @@ def hist_norm_w_mask(x, mask, bin_edges, quantiles, inplace=False):
 
     pix_delta = np.interp(pix_vals, curr_edges, diff)
     pix_delta[0] = 0
+    pix_delta[255] = 0
+    #print(pix_delta)
 
     # add these deltas to the corresponding pixel values
     pix += np.floor(pix_delta[bin_idx]).astype(np.uint8)
@@ -151,6 +153,9 @@ def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask):
 
     ref = cv2.imread(f_ref_image, 0)
     ref_mask = cv2.imread(f_ref_mask, 0)
+
+    print(ref.shape)
+    print(ref_mask.shape)
     ref1d = ref[ref_mask==0].ravel()
     x1, y1 = ecdf(ref1d)
 
