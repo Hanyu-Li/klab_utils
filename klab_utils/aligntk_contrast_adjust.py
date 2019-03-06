@@ -117,7 +117,7 @@ def hist_norm_w_mask(x, mask, bin_edges, quantiles, inplace=False):
 
     pix_delta = np.interp(pix_vals, curr_edges, diff)
     pix_delta[0] = 0
-    pix_delta[255] = 0
+    pix_delta[-1] = 0
     #print(pix_delta)
 
     # add these deltas to the corresponding pixel values

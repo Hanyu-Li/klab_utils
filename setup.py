@@ -32,6 +32,7 @@ entry_points = {
         'aligntk_cut = klab_utils.aligntk_cut:main',
         'aligntk_contrast_adjust = klab_utils.aligntk_contrast_adjust:main',
         'aligntk_preview = klab_utils.aligntk_preview:main',
+        'aligntk_reduce = klab_utils.aligntk_reduce:main',
         'reduce_resolution = klab_utils.reduce_resolution:main'
 
     ]

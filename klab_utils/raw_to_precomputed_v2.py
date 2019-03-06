@@ -1,25 +1,17 @@
 '''Converts a image stack to cloudvolume '''
 from __future__ import print_function
+#from memory_profiler import profile
 import logging
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
-import h5py
-import neuroglancer
 import glob
-import cv2
+from cv2 import imread
 import sys
-import dxchange
 import argparse
-from pprint import pprint
-import os, signal
+import os
 import re
-from ast import literal_eval as make_tuple
-from .reader import check_stack_len,omni_read 
-import json
-from scipy.ndimage.interpolation import zoom
 from cloudvolume import CloudVolume
-from cloudvolume.lib import Vec
+
 from tqdm import tqdm
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
@@ -31,13 +23,13 @@ def _find_index(fname):
     res = re.search(r'([0-9]+).(.*)', fname)     
     return int(res.group(1))
 
-
+# @profile
 def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, cv_args):
     ''' f_sublist is a List[List[str]], inner list size == z_batch'''
     z_chunk = chunk_size[2] # 64 
     #print('length: ', len(f_sublist))
     for fb in tqdm(f_sublist):
-        loaded_vol = np.stack([cv2.imread(f, 0) for f in fb], axis=2)
+        loaded_vol = np.stack([imread(f, 0) for f in fb], axis=2)
         curr_z = _find_index(fb[0])
         actual_z = curr_z - start_z
         for m in range(mip):
@@ -45,9 +37,13 @@ def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, cv_args
             step = np.array(factor)**m
             cv_z_start = actual_z // step[2]
             cv_z_size = loaded_vol.shape[2] // step[2]
-            cv[:,:,cv_z_start:cv_z_start + cv_z_size] = loaded_vol[
-                ::step[0], ::step[1], ::step[2]]
-    pass
+            cv[:,:,cv_z_start:cv_z_start + cv_z_size] = loaded_vol
+            loaded_vol = loaded_vol[::factor[0], ::factor[1], ::factor[2]]
+            # cv[:,:,cv_z_start:cv_z_start + cv_z_size] = loaded_vol[
+            #     ::step[0], ::step[1], ::step[2]]
+        del loaded_vol
+    return
+
 def divide_work(f_list, num_proc, z_batch, image_size, memory_limit):
     '''Decide the best way to distribute workload and z_batch size.
         min granularity is z_batch
@@ -64,7 +60,7 @@ def divide_work(f_list, num_proc, z_batch, image_size, memory_limit):
 
 
 
-
+# @profile
 def stack_to_cloudvolume(input_dir, output_dir, layer_type, data_type, mip,
     chunk_size, resolution, memory_limit=32):
     '''Converts a stack of images to cloudvolume.'''
@@ -72,7 +68,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, data_type, mip,
         f_list = glob.glob(os.path.join(input_dir, '*.*'))
         f_list.sort()
         os.makedirs(output_dir, exist_ok=True)
-        im0 = cv2.imread(f_list[0], 0)
+        im0 = imread(f_list[0], 0)
         Z = len(f_list)
         X,Y = im0.shape
         start_z = _find_index(f_list[0])
@@ -103,7 +99,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, data_type, mip,
             bounded=True, fill_missing=False, autocrop=False, 
             cache=False, compress_cache=None, cdn_cache=False, 
             progress=False, info=info, provenance=None, compress=None, 
-            non_aligned_writes=False, parallel=4)
+            non_aligned_writes=True, parallel=1)
         cv = CloudVolume(c_path, mip=0, **cv_args)
         cv.commit_info()
         #pprint(cv.info)
@@ -125,7 +121,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, data_type, mip,
     mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, cv_args)
     return
 
-
+# @profile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_dir', default=None)
