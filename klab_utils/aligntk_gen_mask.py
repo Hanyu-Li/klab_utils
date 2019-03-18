@@ -18,14 +18,17 @@ def gen_mask(img, l_thresh, h_thresh, kernel_size, var_size, var_thresh):
   # mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
   mask = cv2.dilate(mask,kernel,iterations = 4)
 
-  blur_img = cv2.blur(np.float32(img), (var_size, var_size))
-  blur_img_2 = cv2.blur(np.square(np.float32(img)), (var_size, var_size))
-  var_img = np.sqrt(blur_img_2 - np.square(blur_img))
-  mask_2 = 255*(var_img < var_thresh).astype(np.uint8)
-  mask_2 = cv2.dilate(mask_2, kernel, iterations=4)
+  if var_size is not None and var_thresh is not None:
+    blur_img = cv2.blur(np.float32(img), (var_size, var_size))
+    blur_img_2 = cv2.blur(np.square(np.float32(img)), (var_size, var_size))
+    var_img = np.sqrt(blur_img_2 - np.square(blur_img))
+    mask_2 = 255*(var_img < var_thresh).astype(np.uint8)
+    mask_2 = cv2.dilate(mask_2, kernel, iterations=4)
 
-  mask_3 = np.maximum(mask, mask_2)
-  mask_3 = 255 - mask_3
+    mask_3 = np.maximum(mask, mask_2)
+    mask_3 = 255 - mask_3
+  else:
+    mask_3 = 255 - mask
 
   return mask_3
 
@@ -37,8 +40,8 @@ def main():
   parser.add_argument('--low', default=5, type=int)
   parser.add_argument('--high', default=250, type=int)
   parser.add_argument('--kernel', default=10, type=int)
-  parser.add_argument('--var_size', default=12, type=int)
-  parser.add_argument('--var_thresh', default=25, type=int)
+  parser.add_argument('--var_size', default=None, type=int) # e.g. 12 
+  parser.add_argument('--var_thresh', default=None, type=int) # e.g. 25
   args = parser.parse_args()
 
   if mpi_rank == 0:
