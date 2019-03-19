@@ -115,10 +115,13 @@ def hist_norm_w_mask(x, mask, bin_edges, quantiles, inplace=False):
     # interpolate linearly across the bin edges to get the delta for each pixel
     # value within each bin
 
+    diff[0] = 0
+    diff[1] = 0
+    diff[-1] = 0
+    # print('pix_vals:', pix_vals)
+    # print('curr_edges:', curr_edges)
+    # print('diff:', diff)
     pix_delta = np.interp(pix_vals, curr_edges, diff)
-    pix_delta[0] = 0
-    pix_delta[-1] = 0
-    #print(pix_delta)
 
     # add these deltas to the corresponding pixel values
     pix += np.floor(pix_delta[bin_idx]).astype(np.uint8)
@@ -136,11 +139,14 @@ def ecdf(x):
 def mpi_worker(input_list, mask_dir, output_dir, bin_edges, quantiles):
   for fi in tqdm(input_list):
     bname = os.path.basename(fi).split('.')[0]
-    fm = os.path.join(mask_dir, bname+'.pbm')
     fo = os.path.join(output_dir, bname+'.tif')
     img = cv2.imread(fi, 0)
-    mask = cv2.imread(fm, 0)
-    img = hist_norm_w_mask(img, mask, bin_edges, quantiles)
+    if mask_dir:
+        fm = os.path.join(mask_dir, bname+'.pbm')
+        mask = cv2.imread(fm, 0)
+        img = hist_norm_w_mask(img, mask, bin_edges, quantiles)
+    else:
+        img = hist_norm(img, bin_edges, quantiles)
     cv2.imwrite(fo, img)
 
 def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask):
@@ -152,12 +158,13 @@ def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask):
     os.makedirs(output_dir, exist_ok=True)
 
     ref = cv2.imread(f_ref_image, 0)
-    ref_mask = cv2.imread(f_ref_mask, 0)
-
-    print(ref.shape)
-    print(ref_mask.shape)
-    ref1d = ref[ref_mask==0].ravel()
-    x1, y1 = ecdf(ref1d)
+    if f_ref_mask:
+        ref_mask = cv2.imread(f_ref_mask, 0)
+        ref1d = ref[ref_mask==0].ravel()
+        x1, y1 = ecdf(ref1d)
+    else:
+        ref1d = ref.ravel()
+        x1, y1 = ecdf(ref1d)
 
     bin_edges = np.arange(0,255,10)
     quantiles = [y1[np.where(x1>b)[0][0]] for b in bin_edges[:]]
