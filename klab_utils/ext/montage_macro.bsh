@@ -83,46 +83,42 @@ p.regularize = true;
 p.sift.minOctaveSize = 256;
 p.sift.maxOctaveSize = 2048;
 
-fixedPatches = new ArrayList();
 System.out.println(layerRange);  
 String output_path = dir + "/output";
 f_output = new File(output_path);
 if ( !f_output.exists())
 	f_output.mkdirs();
 
-AlignTask.montageLayers(
-	p,
-	layerRange,
-	tilesAreInPlace,
-	largestGraphOnly,
-	hideDisconnectedTiles,
-	deleteDisconnectedTiles,
-	sloppyOverlapTest
-);
+//AlignTask.montageLayers(
+//	p,
+//	layerRange,
+//	tilesAreInPlace,
+//	largestGraphOnly,
+//	hideDisconnectedTiles,
+//	deleteDisconnectedTiles,
+//	sloppyOverlapTest
+//);
 
-// for (int i = 351; i < 353; i += 1)
-// {
-// 	System.out.println("id:"+i);  
-// 	layer = layerset.getLayer((double)i);
-// 	patches = layer.getPatches(true);
-// 	AlignTask.alignPatches(
-// 		p,
-// 		patches,
-// 		fixedPatches,
-// 		tilesAreInPlace,
-// 		largestGraphOnly,
-// 		hideDisconnectedTiles,
-// 		deleteDisconnectedTiles
-// 	);
-//   Display.repaint(layer);
-// }
+for (Layer layer: layerRange)
+{
+	//layer = layerset.getLayer((double)i);
+	patches = layer.getPatches(true);
+	fixedPatches = new ArrayList();
+	fixedPatches.add(patches.get(0));
+	AlignTask.alignPatches(
+		p,
+		patches,
+		fixedPatches,
+		tilesAreInPlace,
+		largestGraphOnly,
+		hideDisconnectedTiles,
+		deleteDisconnectedTiles
+	);
+  Display.repaint(layer);
+}
 for (Layer layer: layerRange)
 {
 	patches = layer.getPatches(false);
-	// bounds = layerset.get2DBounds();
-	// bounds = layer.get2DBounds();
-	// bounds = new Rectangle(0, 0, (int)Math.ceil(layer.getLayerWidth()), (int)Math.ceil(layer.getLayerHeight())); 
-	// roi = patches[0].getBoundingBox();
 	roi = new Rectangle();
 	for (Patch p: patches)
 	{
