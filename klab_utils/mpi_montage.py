@@ -54,7 +54,7 @@ def main():
   bsh_path = mpi_comm.bcast(bsh_path, 0)
 
   rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = 'fiji --headless -Dinput=%s -Doutput=%s -- %s' % (
+  command = 'fiji --headless -Dinput=%s -Doutput=%s -- --no-splash %s' % (
     rank_input, args.output, bsh_path)
   print(command)
   os.system(command)
