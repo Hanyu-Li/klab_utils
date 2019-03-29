@@ -35,6 +35,7 @@ entry_points = {
         'aligntk_reduce = klab_utils.aligntk_reduce:main',
         'reduce_resolution = klab_utils.reduce_resolution:main',
         'aligntk_min_rect = klab_utils.aligntk_min_rect:main',
+        'aligntk_invert = klab_utils.aligntk_invert:main',
         'mpi_montage = klab_utils.mpi_montage:main'
     ]
 }
