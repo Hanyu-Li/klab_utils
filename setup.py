@@ -34,13 +34,21 @@ entry_points = {
         'aligntk_preview = klab_utils.aligntk_preview:main',
         'aligntk_reduce = klab_utils.aligntk_reduce:main',
         'reduce_resolution = klab_utils.reduce_resolution:main',
-        'aligntk_min_rect = klab_utils.aligntk_min_rect:main'
-
+        'aligntk_min_rect = klab_utils.aligntk_min_rect:main',
+        'aligntk_invert = klab_utils.aligntk_invert:main',
+        'mpi_montage = klab_utils.mpi_montage:main'
     ]
 }
 install_requires = [
     'knossos_utils',
+<<<<<<< HEAD
     'tqdm'
+=======
+    'tqdm',
+    #'cloud-volume',
+    #'neuroglancer',
+    #'igneous'
+>>>>>>> 77c7c7fc258c0dce775a2ff04a0584ab63ea33c2
 ]
 setup(
     name='klab_utils',

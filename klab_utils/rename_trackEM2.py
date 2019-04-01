@@ -1,6 +1,5 @@
 import sys,os
 import h5py
-import dxchange
 import argparse
 import glob
 import re

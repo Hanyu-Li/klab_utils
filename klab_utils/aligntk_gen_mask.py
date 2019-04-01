@@ -3,8 +3,6 @@ import argparse
 import glob 
 import numpy as np
 import cv2
-from PIL import Image
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
