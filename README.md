@@ -6,6 +6,7 @@ A toolbox of scripts facilitating connectomics data processing. Interfaces with 
 
 1. Knossos: 
 ``` bash
+sudo apt-get install build-essential
 pip install git+https://github.com/knossos-project/knossos_utils.git
 pip install git+https://github.com/knossos-project/knossos_cuber.git
 ```
@@ -24,12 +25,13 @@ pip install git+https://github.com/seung-lab/cloud-volume.git
 
 4. Igneous(for 3D mesh generation)
 ``` bash
+sudo apt-get install libboost-dev
 pip install git+https://github.com/seung-lab/igneous.git
 ```
 
 5. Dxchange(for tiff stack io):
 ``` bash
-conda install dxchange
+conda install -c conda-forge dxchange
 ```
 
 6. Install
