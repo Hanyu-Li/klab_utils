@@ -41,14 +41,10 @@ entry_points = {
 }
 install_requires = [
     'knossos_utils',
-<<<<<<< HEAD
-    'tqdm'
-=======
     'tqdm',
     #'cloud-volume',
     #'neuroglancer',
     #'igneous'
->>>>>>> 77c7c7fc258c0dce775a2ff04a0584ab63ea33c2
 ]
 setup(
     name='klab_utils',
