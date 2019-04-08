@@ -22,8 +22,8 @@ def cut_image(img, start_xy, size_xy, angle=0.0):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--input', default=None, type=str)
-  parser.add_argument('--output', default=None, type=str)
+  parser.add_argument('input', default=None, type=str)
+  parser.add_argument('output', default=None, type=str)
   parser.add_argument('--start_xy', default='0,0', type=str)
   parser.add_argument('--size_xy', default='1024,1024', type=str)
   parser.add_argument('--angle', default=0.0, type=float, 

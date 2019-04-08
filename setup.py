@@ -36,12 +36,14 @@ entry_points = {
         'reduce_resolution = klab_utils.reduce_resolution:main',
         'aligntk_min_rect = klab_utils.aligntk_min_rect:main',
         'aligntk_invert = klab_utils.aligntk_invert:main',
+        'aligntk_mpi_apply_map = klab_utils.aligntk_mpi_apply_map:main',
         'mpi_montage = klab_utils.mpi_montage:main'
     ]
 }
 install_requires = [
     'knossos_utils',
     'tqdm',
+    'mpi4py',
     #'cloud-volume',
     #'neuroglancer',
     #'igneous'

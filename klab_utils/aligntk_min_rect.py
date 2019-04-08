@@ -48,8 +48,8 @@ def get_min_rect(img, kernel, iterations):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--input', default=None, type=str)
-  parser.add_argument('--output', default=None, type=str)
+  parser.add_argument('input', default=None, type=str)
+  parser.add_argument('output', default=None, type=str)
   parser.add_argument('--kernel', default=3, type=int)
   parser.add_argument('--iterations', default=4, type=int)
   args = parser.parse_args()
