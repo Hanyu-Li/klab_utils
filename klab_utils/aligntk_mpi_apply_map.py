@@ -4,6 +4,7 @@ import glob
 import os
 import numpy as np
 import argparse
+from tqdm import tqdm
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
 mpi_rank = mpi_comm.Get_rank()
@@ -111,7 +112,26 @@ def get_global_region(amap_dir):
   omaxX = -1000000000
   ominY = 1000000000
   omaxY = -1000000000
-  for f_am in test_list:
+  for f_am in tqdm(test_list):
+    am = read_map(f_am)
+    minX, maxX, minY, maxY = get_region(am)
+    ominX = min(minX, ominX)
+    omaxX = max(maxX, omaxX)
+    ominY = min(minY, ominY)
+    omaxY = max(maxY, omaxY)
+  w = omaxX - ominX + 1
+  h = omaxY - ominY + 1
+  command = '%dx%d%d%d' % (w, h, ominX, ominY)
+  return command
+
+def get_subset_region(amap_subset):
+  test_list = glob.glob(os.path.join(amap_dir, '*.map'))
+  test_list.sort()
+  ominX = 1000000000
+  omaxX = -1000000000
+  ominY = 1000000000
+  omaxY = -1000000000
+  for f_am in tqdm(test_list[:40]):
     am = read_map(f_am)
     minX, maxX, minY, maxY = get_region(am)
     ominX = min(minX, ominX)
@@ -143,7 +163,11 @@ def main():
     tmp_dir = os.path.join(args.input, 'apply_map_tmp')
     os.makedirs(tmp_dir, exist_ok=True)
     write_tmp_images_lst(args.image_lst, mpi_size, tmp_dir)
+
     region = get_global_region(os.path.join(args.input, 'amaps'))
+
+    # test_list = glob.glob(os.path.join(amap_dir, '*.map'))
+    # test_list.sort()
   else:
     tmp_dir = None
     region = None
