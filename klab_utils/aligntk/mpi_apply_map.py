@@ -4,6 +4,7 @@ import glob
 import os
 import numpy as np
 import argparse
+import re
 from tqdm import tqdm
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
@@ -105,14 +106,14 @@ def get_region(m):
             maxY = ry
   return (minX, maxX, minY, maxY)
 
-def get_global_region(amap_dir):
+def get_global_region(amap_dir, sub_range):
   test_list = glob.glob(os.path.join(amap_dir, '*.map'))
   test_list.sort()
   ominX = 1000000000
   omaxX = -1000000000
   ominY = 1000000000
   omaxY = -1000000000
-  for f_am in tqdm(test_list[690:700]):
+  for f_am in tqdm(test_list[sub_range[0]:sub_range[1]+1]):
     am = read_map(f_am)
     minX, maxX, minY, maxY = get_region(am)
     ominX = min(minX, ominX)
@@ -121,7 +122,7 @@ def get_global_region(amap_dir):
     omaxY = max(maxY, omaxY)
   w = omaxX - ominX + 1
   h = omaxY - ominY + 1
-  command = '%dx%d%d%d' % (w, h, ominX, ominY)
+  command = '%dx%d%+d%+d' % (w, h, ominX, ominY)
   return command
 
 def get_subset_region(amap_subset):
@@ -143,10 +144,20 @@ def get_subset_region(amap_subset):
   command = '%dx%d%d%d' % (w, h, ominX, ominY)
   return command
 
-def write_tmp_images_lst(images_lst, groups, outputs):
+def _find_index(fname):
+  res = re.search(r'([0-9]+)', fname)
+  return int(res.group(1))
+
+def write_tmp_images_lst(images_lst, groups, sub_range, outputs):
   with open(images_lst, 'r') as f:
     lines = f.readlines()
-  line_sets = np.array_split(np.asarray(lines), groups)
+
+  # find sub_range
+  lines_dict = {_find_index(l):l for l in lines}
+  sub_range_lines = [lines_dict[i] for i in range(sub_range[0], sub_range[1]+1)]
+  print(sub_range_lines)
+
+  line_sets = np.array_split(np.asarray(sub_range_lines), groups)
   for i, ls in enumerate(line_sets):
     fname = os.path.join(outputs, 'images%d.lst' % i)
     with open(fname, 'w') as f1:
@@ -157,14 +168,18 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('input', type=str)
   parser.add_argument('--image_dir', type=str)
+  parser.add_argument('--mask_dir', default=None, type=str)
   parser.add_argument('--image_lst', type=str)
+  parser.add_argument('--sub_range', type=str, help='both inclusive')
+
   args = parser.parse_args()
   if mpi_rank == 0:
     tmp_dir = os.path.join(args.input, 'apply_map_tmp')
     os.makedirs(tmp_dir, exist_ok=True)
-    write_tmp_images_lst(args.image_lst, mpi_size, tmp_dir)
-
-    region = get_global_region(os.path.join(args.input, 'amaps'))
+    sub_range = [int(i) for i in args.sub_range.split(',')]
+    write_tmp_images_lst(args.image_lst, mpi_size, sub_range, tmp_dir)
+    region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
+    
 
     # test_list = glob.glob(os.path.join(amap_dir, '*.map'))
     # test_list.sort()
@@ -173,8 +188,8 @@ def main():
     region = None
   tmp_dir = mpi_comm.bcast(tmp_dir, 0)
   region = mpi_comm.bcast(region, 0)
-  command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -region %s -memory 500000' \
-  % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, region)
+  command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -masks %s -region %s -memory 500000' \
+  % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, args.mask_dir, region )
   print(command)
   os.system(command)
 
