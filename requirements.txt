@@ -1,0 +1,10 @@
+cloud-volume
+task-queue
+h5py>=2.9.0
+git+git://github.com/knossos-project/knossos_utils.git#egg=knossos_utils
+git+git://github.com/seung-lab/igneous.git#egg=igneous
+opencv-python
+mpi4py>=3.0.1
+scikit-image>=0.14.2
+scipy>=1.2.1
+tqdm>=4.31.1

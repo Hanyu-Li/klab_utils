@@ -164,7 +164,6 @@ def main():
   parser.add_argument('--image_dir', default=None)
   parser.add_argument('--label_dir', default=None)
   parser.add_argument('--output_dir', default='./precomputed')
-  parser.add_argument('--multi', default=False)
   parser.add_argument('--resolution', type=str, default='10,10,10')
   parser.add_argument('--mip', type=int, default=3)
   parser.add_argument('--chunk_size', type=str, default='64,64,64')

@@ -112,7 +112,7 @@ def get_global_region(amap_dir):
   omaxX = -1000000000
   ominY = 1000000000
   omaxY = -1000000000
-  for f_am in tqdm(test_list):
+  for f_am in tqdm(test_list[690:700]):
     am = read_map(f_am)
     minX, maxX, minY, maxY = get_region(am)
     ominX = min(minX, ominX)
@@ -131,7 +131,7 @@ def get_subset_region(amap_subset):
   omaxX = -1000000000
   ominY = 1000000000
   omaxY = -1000000000
-  for f_am in tqdm(test_list[:40]):
+  for f_am in tqdm(test_list[690:700]):
     am = read_map(f_am)
     minX, maxX, minY, maxY = get_region(am)
     ominX = min(minX, ominX)

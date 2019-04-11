@@ -17,7 +17,6 @@ def split_aligntxt(align_txt, output_dir):
   with open(align_txt, 'r') as f:
     text = f.readlines()
   get_key = lambda x: int(re.search(r'S_(\d+)_', x).group(1))
-  # keys = [get_key(line) for line in text]
   key_line_dict = {}
   for line in text:
     key = get_key(line)
@@ -27,7 +26,6 @@ def split_aligntxt(align_txt, output_dir):
     
   key_set = np.asarray(list(key_line_dict.keys()))
   key_sublists = np.array_split(key_set, mpi_size)
-  # print(key_sublists)
 
   for i, keys in enumerate(key_sublists):
     with open(os.path.join(output_dir, 'align_%d.txt' % i), 'w') as f:
@@ -37,8 +35,9 @@ def split_aligntxt(align_txt, output_dir):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--input', default=None, type=str)
-  parser.add_argument('--output', default=None, type=str)
+  parser.add_argument('input', default=None, type=str)
+  parser.add_argument('output', default=None, type=str)
+  parser.add_argument('--fiji', default='fiji', type=str, help='specify ImageJ-linux64 executable path')
   args = parser.parse_args()
 
   if mpi_rank == 0:
@@ -47,15 +46,14 @@ def main():
     bsh_path = pkg_resources.resource_filename(__name__, resource_path)
     logging.warning('macro: %s', bsh_path)
     split_aligntxt(args.input, args.output)
-    # print(bsh_path)
   else:
     pass
     bsh_path = None
   bsh_path = mpi_comm.bcast(bsh_path, 0)
 
   rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = 'fiji --headless -Dinput=%s -Doutput=%s -- --no-splash %s' % (
-    rank_input, args.output, bsh_path)
+  command = '%s --headless -Dinput=%s -Doutput=%s -- --no-splash %s' % (
+    args.fiji,rank_input, args.output, bsh_path)
   print(command)
   os.system(command)
 
