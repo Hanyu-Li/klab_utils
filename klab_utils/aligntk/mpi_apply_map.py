@@ -148,14 +148,23 @@ def _find_index(fname):
   res = re.search(r'([0-9]+)', fname)
   return int(res.group(1))
 
-def write_tmp_images_lst(images_lst, groups, sub_range, outputs):
-  with open(images_lst, 'r') as f:
+def get_range(image_lst):
+  with open(image_lst, 'r') as f:
+    lines = f.readlines()
+  index_list = [_find_index(l) for l in lines]
+  index_list.sort()
+  return [index_list[0], index_list[-1]]
+  
+
+
+def write_tmp_image_lst(image_lst, groups, sub_range, outputs):
+  with open(image_lst, 'r') as f:
     lines = f.readlines()
 
   # find sub_range
   lines_dict = {_find_index(l):l for l in lines}
   sub_range_lines = [lines_dict[i] for i in range(sub_range[0], sub_range[1]+1)]
-  print(sub_range_lines)
+  print('Apply from %s to %s' % (sub_range_lines[0].rstrip(), sub_range_lines[-1].rstrip()))
 
   line_sets = np.array_split(np.asarray(sub_range_lines), groups)
   for i, ls in enumerate(line_sets):
@@ -170,14 +179,17 @@ def main():
   parser.add_argument('--image_dir', type=str)
   parser.add_argument('--mask_dir', default=None, type=str)
   parser.add_argument('--image_lst', type=str)
-  parser.add_argument('--sub_range', type=str, help='both inclusive')
+  parser.add_argument('--sub_range', default=None, type=str, help='both inclusive')
 
   args = parser.parse_args()
   if mpi_rank == 0:
     tmp_dir = os.path.join(args.input, 'apply_map_tmp')
     os.makedirs(tmp_dir, exist_ok=True)
-    sub_range = [int(i) for i in args.sub_range.split(',')]
-    write_tmp_images_lst(args.image_lst, mpi_size, sub_range, tmp_dir)
+    if args.sub_range:
+      sub_range = [int(i) for i in args.sub_range.split(',')]
+    else:
+      sub_range = get_range(args.image_lst)
+    write_tmp_image_lst(args.image_lst, mpi_size, sub_range, tmp_dir)
     region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
     
 
@@ -188,8 +200,13 @@ def main():
     region = None
   tmp_dir = mpi_comm.bcast(tmp_dir, 0)
   region = mpi_comm.bcast(region, 0)
-  command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -masks %s -region %s -memory 500000' \
-  % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, args.mask_dir, region )
+  if args.mask_dir:
+    command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -masks %s -region %s -memory 500000' \
+    % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, args.mask_dir, region )
+  else:
+    command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -region %s -memory 500000' \
+    % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, region )
+
   print(command)
   os.system(command)
 
