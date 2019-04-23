@@ -6,13 +6,9 @@ import glob
 from PIL import Image
 from tqdm import tqdm
 from .utils import mpi_process
+from .utils import reduce_size
 
-def reduce_size(image, factor):
-  img_out = cv2.resize(image, (0,0), fx=1.0/factor, fy=1.0/factor)
-  X, Y = img_out.shape
-  _X = X // 8 * 8
-  _Y = Y // 8 * 8
-  return img_out[:_X, :_Y]
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('input', default=None, type=str)

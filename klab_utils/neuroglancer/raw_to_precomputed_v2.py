@@ -33,14 +33,14 @@ def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, cv_args
   for fb in tqdm(f_sublist):
     # loaded_vol = np.stack([imread(f, 0) for f in fb], axis=2)
     loaded_vol = np.stack([io.imread(f) for f in fb], axis=2)
-    print('>>>',loaded_vol.shape)
-    # diff = chunk_size[2] - loaded_vol.shape[2]
-    # if diff > 0:
-    #   loaded_vol = np.pad(loaded_vol, ((0,0), (0,0), (0, diff)), 'constant', constant_values=0)
+    #print('>>>',loaded_vol.shape)
+    diff = chunk_size[2] - loaded_vol.shape[2]
+    if diff > 0:
+      loaded_vol = np.pad(loaded_vol, ((0,0), (0,0), (0, diff)), 'constant', constant_values=0)
 
     curr_z = _find_index(fb[0])
     actual_z = curr_z - start_z
-    for m in range(mip):
+    for m in range(mip+1):
       cv = CloudVolume(c_path, mip=m, **cv_args)
       step = np.array(factor)**m
       cv_z_start = actual_z // step[2]
@@ -116,7 +116,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
         encoding=encoding,
         resolution=list(resolution),
         voxel_offset=np.array([0, 0, 0]),
-        volume_size=[pad_X, pad_Y, pad_Z],
+        volume_size=[X, Y, pad_Z],
         chunk_size=chunk_size,
         max_mip=mip,
         factor=factor,

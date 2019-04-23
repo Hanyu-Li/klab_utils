@@ -149,7 +149,7 @@ def mpi_worker(input_list, mask_dir, output_dir, bin_edges, quantiles):
         img = hist_norm(img, bin_edges, quantiles)
     cv2.imwrite(fo, img)
 
-def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask):
+def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask, delta):
   if mpi_rank == 0:
     f_list = glob.glob(os.path.join(input_dir, '*.tif*'))
     f_list.sort()
@@ -166,7 +166,7 @@ def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask):
         ref1d = ref.ravel()
         x1, y1 = ecdf(ref1d)
 
-    bin_edges = np.arange(0,255,10)
+    bin_edges = np.arange(0,255,delta)
     quantiles = [y1[np.where(x1>b)[0][0]] for b in bin_edges[:]]
 
   else:
@@ -188,8 +188,9 @@ def main():
     parser.add_argument('--output', default=None)
     parser.add_argument('--ref_image', type=str, default=None)
     parser.add_argument('--ref_mask', type=str, default=None)
+    parser.add_argument('--delta', type=int, default=10)
 
     args = parser.parse_args()
 
-    mpi_run(args.input, args.mask, args.output, args.ref_image, args.ref_mask)
+    mpi_run(args.input, args.mask, args.output, args.ref_image, args.ref_mask, args.delta)
 

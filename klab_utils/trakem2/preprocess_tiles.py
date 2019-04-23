@@ -49,7 +49,7 @@ class EM_preprocessor(object):
 
   def prepare_align_txt(self):
     # f_align_txt = os.path.join(self.output_dir, 'align.txt')
-    with open(self.output, 'w') as f:
+    with open(self.output, 'w') as f_out:
       for f in self.flist:
         tlist = glob.glob(os.path.join(f, 'Tile_*.tif'))
         if len(tlist) == 0:
@@ -64,11 +64,11 @@ class EM_preprocessor(object):
 
           command = '{0} \t {1} \t {2} \t {3} \t {4} \t {5} \t {6} \t {7} \t {8} \n'.format(
               tile_name, c, r, z, self.TILE_COL, self.TILE_ROW, self.TILE_MIN, self.TILE_MAX, self.DTYPE)
-          f.write(command)
+          f_out.write(command)
 
   def run(self):
     print("Input:", self.input_dir)
-    print("Output:", self.output_dir)
+    print("Output:", self.output)
 
     self.flist = glob.glob(os.path.join(self.input_dir, 'S_*'))
     def get_index(f): return re.search(

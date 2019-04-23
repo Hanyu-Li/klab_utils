@@ -17,12 +17,14 @@ entry_points = {
         'klab_utils.trakem2.generate_prealign_txt = klab_utils.trakem2.generate_prealign_txt:main',
         'klab_utils.trakem2.rename = klab_utils.trakem2.rename:main',
         'klab_utils.trakem2.mpi_montage = klab_utils.trakem2.mpi_montage:main',
+        'klab_utils.trakem2.mpi_align = klab_utils.trakem2.mpi_align:main',
 
         # neuroglancer related
         'klab_utils.neuroglancer.neuroglance_precomputed = klab_utils.neuroglancer.neuroglance_precomputed:main',
         'klab_utils.neuroglancer.raw_to_precomputed = klab_utils.neuroglancer.raw_to_precomputed:main',
         'klab_utils.neuroglancer.raw_to_precomputed_v2 = klab_utils.neuroglancer.raw_to_precomputed_v2:main',
         'klab_utils.neuroglancer.mesh_generator = klab_utils.neuroglancer.mesh_generator:main',
+        'klab_utils.neuroglancer.add_mip_level = klab_utils.neuroglancer.add_mip_level:main',
 
         # aligntk_related
         'klab_utils.aligntk.contrast_adjust = klab_utils.aligntk.contrast_adjust:main',
@@ -36,6 +38,7 @@ entry_points = {
         'klab_utils.aligntk.min_rect = klab_utils.aligntk.min_rect:main',
         'klab_utils.aligntk.invert = klab_utils.aligntk.invert:main',
         'klab_utils.aligntk.mpi_apply_map = klab_utils.aligntk.mpi_apply_map:main',
+        'klab_utils.aligntk.fix_defects = klab_utils.aligntk.fix_defects:main',
     ]
 }
 install_requires = [

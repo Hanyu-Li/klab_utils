@@ -24,8 +24,8 @@ def mpi_run(tile_list, output_dir, offset, preview_size):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--input', default=None, type=str)
-  parser.add_argument('--output', default='ds', type=str)
+  parser.add_argument('input', default=None, type=str)
+  parser.add_argument('output', default='./preview', type=str)
   parser.add_argument('--size', default=1024, type=int)
   parser.add_argument('--offset', default=None, type=str)
   args = parser.parse_args()

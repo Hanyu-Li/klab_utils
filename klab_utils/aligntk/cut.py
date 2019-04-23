@@ -5,6 +5,7 @@ import cv2
 from PIL import Image
 from tqdm import tqdm
 from .utils import mpi_process
+
 def cut_image(img, start_xy, size_xy, angle=0.0):
   X, Y = img.shape
   if angle != 0.0:

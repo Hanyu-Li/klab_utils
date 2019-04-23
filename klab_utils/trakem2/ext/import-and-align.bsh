@@ -25,11 +25,13 @@ import java.util.HashSet;
 import mpicbg.trakem2.align.ElasticLayerAlignment;
 import mpicbg.trakem2.align.RegularizedAffineLayerAlignment;
 import ini.trakem2.utils.Saver;
+import java.io.BufferedReader;
 runtime = Runtime.getRuntime();
 System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
 
 dir = System.getProperty("output");
 file = System.getProperty("input");
+pairs = System.getProperty("pairs")
 
 /* create output folder */
 f_dir = new File(dir);
@@ -43,6 +45,8 @@ if ( !f_output.exists())
 
 ControlWindow.setGUIEnabled(false);
 project = Project.newFSProject("blank", null, dir, false);
+//project1 = Project.openFSProject(dir1 + "/project.xml", false);
+
 loader = project.getLoader();
 layerset = project.getRootLayerSet();
 layerset.setSnapshotsMode(1);

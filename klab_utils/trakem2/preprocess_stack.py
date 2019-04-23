@@ -33,7 +33,7 @@ class EM_preprocessor(object):
     self.DTYPE = 0
 
   def test_one_image(self):
-    f_dummy = glob.glob(os.path.join(self.input_dir, '*.tif'))[0]
+    f_dummy = glob.glob(os.path.join(self.input_dir, '*.*'))[0]
     dummy_data = cv2.imread(f_dummy, flags=cv2.IMREAD_GRAYSCALE)
     print(dummy_data.shape)
     self.TILE_ROW, self.TILE_COL = dummy_data.shape
@@ -51,7 +51,7 @@ class EM_preprocessor(object):
     #f_align_txt = os.path.join(self.output_dir, 'align.txt')
 
     flist = np.asarray(glob.glob(os.path.abspath(
-        os.path.join(self.input_dir, '*.tif*'))))
+        os.path.join(self.input_dir, '*.*'))))
     inds = [int(re.search('.*_([0-9]*)', f.split('/')[-1]).group(1))
             for f in flist]
     flist = flist[np.argsort(inds)]
