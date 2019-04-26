@@ -82,7 +82,7 @@ Align.ParamOptimize p;
 p = new Align.ParamOptimize().clone();
 p.rejectIdentity = true;
 p.regularize = true;
-p.sift.minOctaveSize = 256;
+p.sift.minOctaveSize = 1024;
 p.sift.maxOctaveSize = 2048;
 
 System.out.println(layerRange);  

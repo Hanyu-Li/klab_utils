@@ -68,6 +68,9 @@ def hist_norm(x, bin_edges, quantiles, inplace=False):
     # desired values for each quantile?
     diff = bin_edges - curr_edges
 
+    diff[0] = 0
+    diff[1] = 0
+    diff[-1] = 0
     # interpolate linearly across the bin edges to get the delta for each pixel
     # value within each bin
     pix_delta = np.interp(pix_vals, curr_edges, diff)
@@ -167,7 +170,14 @@ def mpi_run(input_dir, mask_dir, output_dir, f_ref_image, f_ref_mask, delta):
         x1, y1 = ecdf(ref1d)
 
     bin_edges = np.arange(0,255,delta)
-    quantiles = [y1[np.where(x1>b)[0][0]] for b in bin_edges[:]]
+    quantiles = []
+    for b in bin_edges:
+      q = np.where(x1>b)[0]
+      if len(q) > 1:
+        quantiles.append(y1[q[0]])
+      else:
+        quantiles.append(1.0)
+    # quantiles = [y1[np.where(x1>b)[0][0]] for b in bin_edges[:]]
 
   else:
     f_sublist = None
