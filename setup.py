@@ -37,6 +37,7 @@ entry_points = {
         'klab_utils.aligntk.reduce = klab_utils.aligntk.reduce:main',
         'klab_utils.aligntk.min_rect = klab_utils.aligntk.min_rect:main',
         'klab_utils.aligntk.invert = klab_utils.aligntk.invert:main',
+        'klab_utils.aligntk.invert_bg = klab_utils.aligntk.invert_bg:main',
         'klab_utils.aligntk.mpi_apply_map = klab_utils.aligntk.mpi_apply_map:main',
         'klab_utils.aligntk.fix_defects = klab_utils.aligntk.fix_defects:main',
     ]

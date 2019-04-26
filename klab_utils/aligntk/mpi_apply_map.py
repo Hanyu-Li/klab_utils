@@ -109,12 +109,14 @@ def get_region(m):
 def get_global_region(amap_dir, sub_range):
   test_list = glob.glob(os.path.join(amap_dir, '*.map'))
   test_list.sort()
+  _get_index = lambda x: int(re.search(r'([0-9]+)\.map', x).group(1))
+  test_dict = {_get_index(f):f for f in test_list}
   ominX = 1000000000
   omaxX = -1000000000
   ominY = 1000000000
   omaxY = -1000000000
-  for f_am in tqdm(test_list[sub_range[0]:sub_range[1]+1]):
-    am = read_map(f_am)
+  for i in tqdm(range(sub_range[0], sub_range[1]+1)):
+    am = read_map(test_dict[i])
     minX, maxX, minY, maxY = get_region(am)
     ominX = min(minX, ominX)
     omaxX = max(maxX, omaxX)
@@ -180,6 +182,8 @@ def main():
   parser.add_argument('--mask_dir', default=None, type=str)
   parser.add_argument('--image_lst', type=str)
   parser.add_argument('--sub_range', default=None, type=str, help='both inclusive')
+  parser.add_argument('--fix_first', default=False, type=bool, 
+          help='whether to fix the first slice')
 
   args = parser.parse_args()
   if mpi_rank == 0:
@@ -190,7 +194,16 @@ def main():
     else:
       sub_range = get_range(args.image_lst)
     write_tmp_image_lst(args.image_lst, mpi_size, sub_range, tmp_dir)
-    region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
+    if not args.fix_first:
+      region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
+    else:
+      region = get_global_region(os.path.join(args.input, 'amaps'), [sub_range[0], sub_range[0]])
+
+
+
+
+
+
     
 
     # test_list = glob.glob(os.path.join(amap_dir, '*.map'))

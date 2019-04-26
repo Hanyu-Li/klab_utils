@@ -6,8 +6,8 @@ from pprint import pprint
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--image_dir', default=None, type=str)
-  parser.add_argument('--output_dir', default=None, type=str)
+  parser.add_argument('image_dir', default=None, type=str)
+  parser.add_argument('output_dir', default=None, type=str)
   # parser.add_argument('--groups', default=1, type=int)
   parser.add_argument('--group_size', default=12, type=int)
   args = parser.parse_args()

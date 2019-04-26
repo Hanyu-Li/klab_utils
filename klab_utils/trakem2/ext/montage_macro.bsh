@@ -63,7 +63,7 @@ if (l0.getDisplayables(Patch.class).size() == 0)
 	layerset.remove(l0);
 
 /* save the project */
-	project.saveAs(dir + "/project.xml", false);
+	// project.saveAs(dir + "/project.xml", false);
 
 
 /* prepare montage */
@@ -143,5 +143,5 @@ for (Layer layer: layerRange)
 	System.out.println(output_str);
 	new Saver(".tif").save(flat, output_str);
 }
-project.saveAs(dir + "/project.xml", true);
+// project.saveAs(dir + "/project.xml", true);
 runtime.exit(0);

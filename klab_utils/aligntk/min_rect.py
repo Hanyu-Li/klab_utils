@@ -13,38 +13,9 @@ def get_min_rect(img, kernel, iterations):
   ret,thresh = cv2.threshold(img, 0.5, 255, 0)
   kernel = np.ones((kernel, kernel), np.uint8)
   thresh = cv2.dilate(thresh, kernel, iterations=iterations)
-  _, contours, _ = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+  contours, _ = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
   x, y, w, h = cv2.boundingRect(contours[0])
   return img[y:y+h, x:x+w]
-# def get_thresh(img, kernel, iterations):
-#   ret, thresh = cv2.threshold(img, 0.5, 255, 0)
-#   kernel = np.ones((kernel, kernel), np.uint8)
-#   thresh = cv2.dilate(thresh, kernel, iterations=iterations)
-#   return thresh
-# def get_min_rect(img, kernel, iterations):
-#   thresh = get_thresh(img, kernel, iterations)
-
-#   _, contours, _ = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-
-#   (x, y), (width, height), rect_angle = cv2.minAreaRect(contours[0])
-
-#   angle = rect_angle
-#   corrected_angle = 90 + rect_angle
-# #   print(width, height, angle, corrected_angle)
-#   if width < height:
-#     angle = corrected_angle
-#   else:
-#     angle = angle
-    
-#   x, y, w, h = cv2.boundingRect(contours[0])
-#   if angle < 1 and angle > -1 or corrected_angle < 1 and corrected_angle > -1:
-#     return img[y:y+h, x:x+w]
-#   else:
-#     rot_img = imutils.rotate(img[y:y+h, x:x+w], angle)
-#     rot_thresh = get_thresh(rot_img, kernel, iterations)
-#     _, rot_contours, _ = cv2.findContours(rot_thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#     x, y, w, h = cv2.boundingRect(rot_contours[0])
-#     return rot_img[y:y+h, x:x+w]
 
 def main():
   parser = argparse.ArgumentParser()
