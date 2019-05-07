@@ -40,7 +40,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('input', default=None, type=str)
   parser.add_argument('output', default=None, type=str)
-  parser.add_argument('--pairs', default=None, type=str)
+  parser.add_argument('--range', default=None, type=str)
   parser.add_argument('--fiji', default='fiji', type=str, help='specify ImageJ-linux64 executable path')
   args = parser.parse_args()
 
@@ -55,18 +55,26 @@ def main():
     logging.warning('macro: %s', bsh_path)
     # tmp_dir = os.path.join(args.output, 'tmp')
     # split_aligntxt(args.input, tmp_dir)
-    key_sublist = get_keys(args.input)
+    if not args.range:
+      key_sublist = get_keys(args.input)
+    else:
+      sub_range = [int(i) for i in args.range.split(',')]
+      keys = np.asarray(range(sub_range[0], sub_range[1]))
+      key_sublist = np.array_split(keys, mpi_size)
+    begin = key_sublist[0][0]
   else:
     pass
     key_sublist = None
     bsh_path = None
+    begin = None
   bsh_path = mpi_comm.bcast(bsh_path, 0)
   key_sublist = mpi_comm.scatter(key_sublist, 0)
+  begin = mpi_comm.bcast(begin, 0)
 
   print(key_sublist)
   #rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = '%s -Xms6g -Xmx6g --cpu_--headless -Dinput=%s -Doutput=%s -Drange=%s -- --no-splash %s' % (
-    args.fiji, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]),
+  command = '%s -Xms6g -Xmx6g --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -- --no-splash %s' % (
+    args.fiji, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin,
     bsh_path)
   print(command)
   os.system(command)

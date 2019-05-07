@@ -41,6 +41,7 @@ def main():
   parser.add_argument('--iterations', default=8, type=int)
   parser.add_argument('--var_size', default=None, type=int) # e.g. 12 
   parser.add_argument('--var_thresh', default=None, type=int) # e.g. 25
+  parser.add_argument('--mask_image', default=False, type=bool) # e.g. 25
   args = parser.parse_args()
 
   if mpi_rank == 0:
@@ -62,6 +63,9 @@ def main():
       row, col = mask.shape
       fd.write(bytearray("P4\n%i %i\n" % (col, row), 'ascii'))
       fd.write(np.packbits(mask[:row,:col], axis=-1).tobytes())
+    if args.mask_image:
+      img[mask<=0] = 0
+      cv2.imwrite(f, img)
 
 
 if __name__ == '__main__':

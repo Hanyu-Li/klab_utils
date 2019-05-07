@@ -10,6 +10,7 @@ entry_points = {
         'klab_utils.knossos.swc_to_mask = klab_utils.knossos.swc_to_mask:main',
         'klab_utils.knossos.labels_to_knossos = klab_utils.knossos.labels_to_knossos:main',
         'klab_utils.knossos.offset_annotation = klab_utils.knossos.offset_annotation:main',
+        'klab_utils.knossos.stack_to_wkcube = klab_utils.knossos.stack_to_wkcube:main',
 
         # trakem2 related
         'klab_utils.trakem2.preprocess_stack = klab_utils.trakem2.preprocess_stack:main',
@@ -17,13 +18,15 @@ entry_points = {
         'klab_utils.trakem2.generate_prealign_txt = klab_utils.trakem2.generate_prealign_txt:main',
         'klab_utils.trakem2.rename = klab_utils.trakem2.rename:main',
         'klab_utils.trakem2.mpi_montage = klab_utils.trakem2.mpi_montage:main',
-        'klab_utils.trakem2.mpi_align = klab_utils.trakem2.mpi_align:main',
+        'klab_utils.trakem2.mpi_export = klab_utils.trakem2.mpi_export:main',
+        'klab_utils.trakem2.align = klab_utils.trakem2.align:main',
 
         # neuroglancer related
         'klab_utils.neuroglancer.neuroglance_precomputed = klab_utils.neuroglancer.neuroglance_precomputed:main',
         'klab_utils.neuroglancer.raw_to_precomputed = klab_utils.neuroglancer.raw_to_precomputed:main',
         'klab_utils.neuroglancer.raw_to_precomputed_v2 = klab_utils.neuroglancer.raw_to_precomputed_v2:main',
         'klab_utils.neuroglancer.mesh_generator = klab_utils.neuroglancer.mesh_generator:main',
+        'klab_utils.neuroglancer.mesh_generator_v2 = klab_utils.neuroglancer.mesh_generator_v2:main',
         'klab_utils.neuroglancer.add_mip_level = klab_utils.neuroglancer.add_mip_level:main',
 
         # aligntk_related

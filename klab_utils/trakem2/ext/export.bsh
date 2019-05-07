@@ -36,6 +36,8 @@ System.out.println( runtime.availableProcessors() + " cores available for multi-
 dir = System.getProperty("output");
 file = System.getProperty("input");
 range = System.getProperty("range");
+begin = System.getProperty("begin");
+begin = Integer.parseInt(begin);
 
 String output_path = dir + "/output";
 
@@ -62,15 +64,22 @@ System.out.println(layerset);
 
 //layerset.setMinimumDimensions();
 
-roi = layerset.get2DBounds();
+patches = layerset.getLayer(0).getPatches(true);
+// roi = layerset.get2DBounds();
+System.out.println(patches);
+roi = patches.get(0).getBoundingBox();
+
 System.out.println(roi);
 System.out.println(r0);
 System.out.println(r1);
+System.out.println(begin);
 //for (Layer layer: layerRange)
 saver = new Saver(".tif");
+// beginning = (int)layerset.getLayer(0).getZ();
 for (i = r0; i<=r1; i++)
 {
-  layer = layerRange.get(i);
+  ind = i - begin;
+  layer = layerRange.get(ind);
   // System.out.println(layer);
   flat = loader.getFlatImage(
     layer, 
@@ -83,7 +92,7 @@ for (i = r0; i<=r1; i++)
     true,
     Color.black,
     null);
-  z = (int)layer.getZ();
+  z = (int)layer.getZ() + begin;
   //System.out.println(z);
   String output_str = String.format("%s/S_%04d.tif", new Object[]{output_path, z});
   System.out.println(output_str);

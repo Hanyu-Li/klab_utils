@@ -6,6 +6,7 @@ import h5py
 import glob
 import re
 import os
+from skimage import io
 from tqdm import tqdm
 
 def clahe_vol(vol, clipLimit=2.0, tileGridSize=(8,8)):
@@ -28,11 +29,11 @@ def get_h5_data(h5_paths, flip=True):
   return ref_data
 
 def get_stack_data(image_dir):
-  f_list = glob.glob(os.path.join(image_dir, '*.j*'))
+  f_list = glob.glob(os.path.join(image_dir, '*.*'))
 #   print(f_list)
   get_ind = lambda f: int(re.search(r'(\d+)\..*', f).group(1))
   f_list.sort(key=get_ind)
-  vol = np.stack([cv2.imread(f, 0) for f in f_list], -1)
+  vol = np.stack([io.imread(f) for f in f_list], -1)
   return vol
 
 def get_cv_data(cv_path, offset_xyz, size_xyz):
@@ -42,7 +43,9 @@ def get_cv_data(cv_path, offset_xyz, size_xyz):
   return np.concatenate([full_cv[b] for b in bbox], 2)[...,0]
 
 
-def write_vol(vol, output_dir, start_ind):
+def write_vol(vol, output_dir, start_ind=0):
+  os.makedirs(output_dir, exist_ok=True)
   for i in range(vol.shape[2]):
-    fname = os.path.join(output_dir, 'S_%s.jpg' % str(i+start_ind).zfill(4))
-    cv2.imwrite(fname, vol[:,:,i])
+    fname = os.path.join(output_dir, 'S_%s.tif' % str(i+start_ind).zfill(4))
+    # cv2.imwrite(fname, vol[:,:,i])
+    io.imsave(fname, vol[:,:,i])

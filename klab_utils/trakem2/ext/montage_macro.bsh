@@ -27,6 +27,8 @@ System.out.println( runtime.availableProcessors() + " cores available for multi-
 
 file = System.getProperty("input");
 dir = System.getProperty("output");
+minOctave = Integer.parseInt(System.getProperty("min"));
+maxOctave = Integer.parseInt(System.getProperty("max"));
 
 /* create output folder */
 f_dir = new File(dir);
@@ -82,8 +84,8 @@ Align.ParamOptimize p;
 p = new Align.ParamOptimize().clone();
 p.rejectIdentity = true;
 p.regularize = true;
-p.sift.minOctaveSize = 1024;
-p.sift.maxOctaveSize = 2048;
+p.sift.minOctaveSize = minOctave;
+p.sift.maxOctaveSize = maxOctave;
 
 System.out.println(layerRange);  
 String output_path = dir + "/output";
