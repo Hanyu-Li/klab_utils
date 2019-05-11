@@ -12,16 +12,19 @@ import argparse
 import os
 import subprocess
 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+host = MPI.Get_processor_name()
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--labels', default=None,
                       help="path to precomputed labels")
-  parser.add_argument('--verbose', default=False,
+  parser.add_argument('--verbose', action="store_true",
                       help="wether to use progressbar")
   parser.add_argument('--dim_size', default='64,64,64',
                       help="mesh chunksize")
-  # parser.add_argument('--simplification_factor', default=10, type=int,
-  #                     help="simplification_factor")
   parser.add_argument('--max_simplification_error', default=40, type=int,
                       help="max_simplification_error")
 
@@ -32,18 +35,15 @@ def main():
   dim_size = tuple(int(d) for d in args.dim_size.split(','))
   print(dim_size)
 
+  # non mpi mode
   print("Making meshes...")
   with LocalTaskQueue(parallel=True) as tq:
     tasks = tc.create_meshing_tasks(in_path, mip=mip, shape=(256, 256, 256))
     tq.insert_all(tasks)
     tasks = tc.create_mesh_manifest_tasks(in_path)
+    print(len(tasks))
     tq.insert_all(tasks)
   print("Done!")
-
-  #command = r'gunzip {}/mesh/*.gz'.format(args.labels)
-  #print(command)
-  #subprocess.call(command, shell=True)
-  #print("Done!")
 
 
 if __name__ == '__main__':

@@ -44,6 +44,12 @@ entry_points = {
         'klab_utils.aligntk.clahe = klab_utils.aligntk.clahe:main',
         'klab_utils.aligntk.mpi_apply_map = klab_utils.aligntk.mpi_apply_map:main',
         'klab_utils.aligntk.fix_defects = klab_utils.aligntk.fix_defects:main',
+
+        # ffn 
+        'klab_utils.ffn.write_h5 = klab_utils.ffn.write_h5:main',
+        'klab_utils.ffn.export_inference = klab_utils.ffn.export_inference:main',
+        'klab_utils.ffn.agglomerate = klab_utils.ffn.agglomerate:main',
+        'klab_utils.ffn.mpi_agglomerate = klab_utils.ffn.mpi_agglomerate:main',
     ]
 }
 install_requires = [

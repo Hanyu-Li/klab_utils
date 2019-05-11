@@ -27,13 +27,13 @@ def _find_index(fname):
   return int(res.group(1))
 
 
-def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, cv_args):
+def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, flip_xy, cv_args):
   ''' f_sublist is a List[List[str]], inner list size == z_batch'''
-  #z_chunk = chunk_size[2]  # 64
   for fb in tqdm(f_sublist):
-    # loaded_vol = np.stack([imread(f, 0) for f in fb], axis=2)
-    loaded_vol = np.stack([io.imread(f) for f in fb], axis=2)
-    #print('>>>',loaded_vol.shape)
+    if flip_xy:
+      loaded_vol = np.stack([np.transpose(io.imread(f)) for f in fb], axis=2)
+    else:
+      loaded_vol = np.stack([io.imread(f) for f in fb], axis=2)
     diff = chunk_size[2] - loaded_vol.shape[2]
     if diff > 0:
       loaded_vol = np.pad(loaded_vol, ((0,0), (0,0), (0, diff)), 'constant', constant_values=0)
@@ -42,13 +42,13 @@ def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, cv_args
     actual_z = curr_z - start_z
     for m in range(mip+1):
       cv = CloudVolume(c_path, mip=m, **cv_args)
+      offset = cv.mip_voxel_offset(m)
       step = np.array(factor)**m
-      cv_z_start = actual_z // step[2]
+      cv_z_start = actual_z // step[2] + offset[2]
       cv_z_size = loaded_vol.shape[2] // step[2]
+
       cv[:, :, cv_z_start:cv_z_start + cv_z_size] = loaded_vol
       loaded_vol = loaded_vol[::factor[0], ::factor[1], ::factor[2]]
-      # cv[:,:,cv_z_start:cv_z_start + cv_z_size] = loaded_vol[
-      #     ::step[0], ::step[1], ::step[2]]
     del loaded_vol
   return
 
@@ -59,24 +59,21 @@ def divide_work(f_list, num_proc, z_batch, image_size, memory_limit):
   '''
   batched_f_list = np.split(np.asarray(
       f_list), np.arange(z_batch, len(f_list), z_batch))
-  #merge_batch_N = memory_limit // (z_batch * image_size)
   f_sublists = np.array_split(batched_f_list, num_proc)
-  # for f in f_sublists:
-  #     if len(f) > merge_batch_N:
-  #         f = np.concatenate(f)
 
   return f_sublists
 
 
-# @profile
 def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
-                         chunk_size, resolution, memory_limit=10000):
+                         chunk_size, offset, resolution, flip_xy, memory_limit=10000):
   '''Converts a stack of images to cloudvolume.'''
   if mpi_rank == 0:
     f_list = glob.glob(os.path.join(input_dir, '*.*'))
     f_list.sort(key=_find_index)
     os.makedirs(output_dir, exist_ok=True)
     im0 = io.imread(f_list[0])
+    if flip_xy:
+      im0 = np.transpose(im0)
     print(im0.shape, im0.dtype)
     data_type = im0.dtype
     Z = len(f_list)
@@ -115,7 +112,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
         data_type=str(data_type),
         encoding=encoding,
         resolution=list(resolution),
-        voxel_offset=np.array([0, 0, 0]),
+        voxel_offset=np.array(offset),
         volume_size=[X, Y, pad_Z],
         chunk_size=chunk_size,
         max_mip=mip,
@@ -153,7 +150,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
   print('rank: %d, range: %s <-> %s' % (
       mpi_rank, f_sublist[0][0], f_sublist[-1][-1]))
   mpi_cloud_write(f_sublist, c_path, start_z, mip,
-                  factor, chunk_size, cv_args)
+                  factor, chunk_size, flip_xy, cv_args)
   return
 
 # @profile
@@ -168,26 +165,33 @@ def main():
   parser.add_argument('--mip', type=int, default=3)
   parser.add_argument('--chunk_size', type=str, default='64,64,64')
   parser.add_argument('--z_step', type=int, default=None)
-  parser.add_argument('--flip_axes', type=bool, default=False)
+  parser.add_argument('--flip_xy', action="store_true")
   parser.add_argument('--memory_limit', type=float, default=10000)
+  parser.add_argument('--offset', type=str, default='0,0,0')
+
 
   args = parser.parse_args()
   resolution = tuple(int(d) for d in args.resolution.split(','))
   chunk_size = tuple(int(d) for d in args.chunk_size.split(','))
+  offset = tuple(int(d) for d in args.offset.split(','))
 
   if args.image_dir:
     stack_to_cloudvolume(args.image_dir, args.output_dir,
                         layer_type='image', #data_type='uint8',
                         mip=args.mip,
                         chunk_size=chunk_size,
+                        offset=offset,
                         resolution=resolution,
+                        flip_xy=args.flip_xy,
                         memory_limit=args.memory_limit)
   if args.label_dir:
     stack_to_cloudvolume(args.label_dir, args.output_dir,
                        layer_type='segmentation', #data_type='uint32',
                        mip=args.mip,
                        chunk_size=chunk_size,
+                       offset=offset,
                        resolution=resolution,
+                       flip_xy=args.flip_xy,
                        memory_limit=args.memory_limit)
 
   # get

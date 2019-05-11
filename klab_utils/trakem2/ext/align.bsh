@@ -36,6 +36,8 @@ System.out.println( runtime.availableProcessors() + " cores available for multi-
 dir = System.getProperty("output");
 file = System.getProperty("input");
 f_pairs = System.getProperty("pairs");
+minOctave = Integer.parseInt(System.getProperty("min"));
+maxOctave = Integer.parseInt(System.getProperty("max"));
 System.out.println(f_pairs);
 pairs = null;
 if (f_pairs == null)
@@ -124,8 +126,8 @@ paramAffine = new RegularizedAffineLayerAlignment.Param();
 
 paramAffine.ppm.sift.initialSigma = 1.6f;
 paramAffine.ppm.sift.steps = 3;
-paramAffine.ppm.sift.minOctaveSize = 512;
-paramAffine.ppm.sift.maxOctaveSize = 2048;
+paramAffine.ppm.sift.minOctaveSize = minOctave;
+paramAffine.ppm.sift.maxOctaveSize = maxOctave;
 paramAffine.ppm.sift.fdSize = 4;
 paramAffine.ppm.sift.fdBins = 8;
 paramAffine.ppm.rod = 0.92f;

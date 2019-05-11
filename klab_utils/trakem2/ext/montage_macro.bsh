@@ -119,9 +119,9 @@ for (Layer layer: layerRange)
 		deleteDisconnectedTiles
 	);
   Display.repaint(layer);
-}
-for (Layer layer: layerRange)
-{
+// }
+// for (Layer layer: layerRange)
+// {
 	patches = layer.getPatches(false);
 	roi = new Rectangle();
 	for (Patch p: patches)

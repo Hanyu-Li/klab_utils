@@ -43,9 +43,10 @@ def get_cv_data(cv_path, offset_xyz, size_xyz):
   return np.concatenate([full_cv[b] for b in bbox], 2)[...,0]
 
 
-def write_vol(vol, output_dir, start_ind=0):
+def write_vol(vol, output_dir, z_axis=2, start_ind=0):
   os.makedirs(output_dir, exist_ok=True)
+  if z_axis != 2:
+    vol = np.moveaxis(vol, z_axis, 2)
   for i in range(vol.shape[2]):
     fname = os.path.join(output_dir, 'S_%s.tif' % str(i+start_ind).zfill(4))
-    # cv2.imwrite(fname, vol[:,:,i])
     io.imsave(fname, vol[:,:,i])
