@@ -182,8 +182,13 @@ def main():
   parser.add_argument('--mask_dir', default=None, type=str)
   parser.add_argument('--image_lst', type=str)
   parser.add_argument('--sub_range', default=None, type=str, help='both inclusive')
-  parser.add_argument('--fix_first', default=False, type=bool, 
-          help='whether to fix the first slice')
+  # parser.add_argument('--fix_first', default=False, type=bool, 
+  #         help='whether to fix the first slice')
+  # parser.add_argument('--fix_last', default=False, type=bool, 
+  #         help='whether to fix the last slice')
+  # group = parser.add_mutually_exclusive_group()
+  parser.add_argument('--fix_first', action='store_true')
+  parser.add_argument('--fix_last', action='store_true')
 
   args = parser.parse_args()
   if mpi_rank == 0:
@@ -194,11 +199,14 @@ def main():
     else:
       sub_range = get_range(args.image_lst)
     write_tmp_image_lst(args.image_lst, mpi_size, sub_range, tmp_dir)
-    if not args.fix_first:
-      region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
-    else:
+    
+    assert not args.fix_first or not args.fix_last
+    if args.fix_first:
       region = get_global_region(os.path.join(args.input, 'amaps'), [sub_range[0], sub_range[0]])
-
+    elif args.fix_last:
+      region = get_global_region(os.path.join(args.input, 'amaps'), [sub_range[-1], sub_range[-1]])
+    else:
+      region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
 
 
 
