@@ -221,7 +221,7 @@ def update_ids_and_write(seg_map, sub_indices):
     cv = prepare_precomputed(precomputed_path, offset_xyz, size_xyz, resolution, chunk_size)
     cv[bbox] = seg
 
-def infer_grid(seg_map):
+def infer_grid_v0(seg_map):
   # if mpi_rank == 0:
   total = len(seg_map.keys())
   #print(total)
@@ -236,8 +236,8 @@ def infer_grid(seg_map):
   gcd = np.gcd.reduce(corners)
   grid = corners // gcd
   #print(grid)
-  print('>>')
-  pprint(seg_map)
+  #print('>>')
+  #pprint(seg_map)
   keys = list(seg_map.keys())
   keys.sort()
   for i, k in enumerate(keys):
@@ -274,7 +274,71 @@ def infer_grid(seg_map):
         seg_map[j]['group_id'] = group_id
     group_id += 1
   return group_id
+def infer_grid(seg_map):
+  corners = []
+  corner_str = []
+  corner_keys = []
+  for k,v in seg_map.items():
+    bb = v['bbox']
+    x, y, z = bb.minpt
+    corners.append((x, y, z))
+    corner_str.append('%s_%s_%s' % (str(x).zfill(6), str(y).zfill(6), str(z).zfill(6)))
+    corner_keys.append(k)
+  
+  order = np.argsort(corner_str, axis=0)
+  print('order:', order)
+  
+  corners = np.stack(corners, 0)
+  corners = corners[order,:]
+  corner_keys = np.array(corner_keys)[order]
+  
+  min_corner = np.min(corners, 0)
+  corners = corners - min_corner
+  gcd = np.gcd.reduce(corners)
+  grid = corners // gcd
+#   print(grid)
+  print('keys:', corner_keys)
+#   print(corners_keys)
+#   keys = list(seg_map.keys())
+#   keys.sort()
+#   for i, k in enumerate(keys):
+#     seg_map[k]['grid']=grid[i]
+  for i, k in enumerate(corner_keys):
+    seg_map[k]['grid']=grid[i]
 
+  # each set is grouped into one 8-set serial agglomeration
+  max_grid = len(seg_map.keys())
+  if max_grid > 8:
+    grid_set = np.array([
+      [0,0,0],
+      [0,0,1],
+      [0,1,0],
+      [0,1,1],
+      [1,0,0],
+      [1,0,1],
+      [1,1,0],
+      [1,1,1],
+    ])
+  else:
+    grid_set = grid
+
+  # divid into sets
+  grid_shape = grid[-1]+1
+  print(grid_shape)
+  group_id = 0
+  # grid_to_id_map = {tuple(grid[i]):i for i in range(len(grid))}
+  grid_to_id_map = {tuple(grid[i]):k for i,k in enumerate(corner_keys)}
+  print(grid_to_id_map)
+  for offset in itertools.product(range(0, grid_shape[0], 2),
+                            range(0, grid_shape[1], 2),
+                            range(0, grid_shape[2], 2)):
+    group_ids = grid_set + np.array(offset)
+    for i in group_ids:
+      if tuple(i) in grid_to_id_map:
+        j = grid_to_id_map[tuple(i)]
+        seg_map[j]['group_id'] = group_id
+    group_id += 1
+  return group_id
 
 def agglomerate_group(seg_map, merge_output, gid=None):
   if not seg_map:
@@ -294,8 +358,8 @@ def agglomerate_group(seg_map, merge_output, gid=None):
   for k1, k2 in tqdm(G.edges()):
     p1 = seg_map[k1]['output']
     p2 = seg_map[k2]['output']
-    #remap_label  = agglomerate(p1, p2, contiguous=False, inplace=True, no_zero=True)
-    #print(len(remap_label))
+    remap_label  = agglomerate(p1, p2, contiguous=False, inplace=True, no_zero=True)
+    print(len(remap_label))
   #if mpi_rank == 0:
   #  max_group_id = infer_grid(seg_map)
   #  print('max_group_id', max_group_id)
@@ -331,7 +395,7 @@ def stage_wise_agglomerate(seg_map, output, stage=0):
     if gid in group_subset:
       grouped_seg_map[gid][k] = v 
 
-  print('>>', mpi_rank, len(grouped_seg_map.keys()))
+  logging.warning('>> keys %d, %d', mpi_rank, len(grouped_seg_map.keys()))
 
   prev_stage = os.path.join(output, 'stage_%d' % stage)
 
@@ -408,7 +472,6 @@ def stage_wise_agglomerate_v2(seg_map, output, group_subset, stage=0):
   #print('>>', mpi_rank, len(grouped_seg_map.keys()))
   print('rank: %d >>>>>group_seg_map %s' %(mpi_rank,  grouped_seg_map))
 
-  prev_stage = os.path.join(output, 'stage_%d' % stage)
 
   # recursively merge
   stage = stage + 1
@@ -462,7 +525,7 @@ def main():
       with open(config_path, 'rb') as fp:
         seg_map = pickle.load(fp)
         print('unpickled: ')
-        pprint(seg_map)
+        #pprint(seg_map)
     else:
       seg_map = None
     seg_map = mpi_comm.bcast(seg_map, 0)
@@ -494,7 +557,7 @@ def main():
     if mpi_rank == 0:
       os.makedirs(args.output, exist_ok=True)
       with open(os.path.join(args.output, 'config.pkl'), 'wb') as fp:
-        pprint(seg_map)
+        #pprint(seg_map)
         pickle.dump(seg_map, fp)
 
   ####
@@ -507,48 +570,54 @@ def main():
 
   
   # Step 2: Agglom one step
-  stage = 0
-  print('>>> stage', stage)
+  #stage = 0
+  #print('>>> stage', stage)
 
-  if mpi_rank == 0:
-    max_group_id = infer_grid(seg_map)
-    print('max_group_id', max_group_id)
-    group_subset = np.array_split(np.arange(max_group_id), mpi_size)
-    print('>>>>grou_subset', group_subset)
-  else:
-    seg_map = None
-    group_subset = None
-  seg_map = mpi_comm.bcast(seg_map, 0)
-  group_subset = mpi_comm.scatter(group_subset, 0)
-  mpi_comm.barrier()
+  #if mpi_rank == 0:
+  #  max_group_id = infer_grid(seg_map)
+  #  print('max_group_id', max_group_id)
+  #  group_subset = np.array_split(np.arange(max_group_id), mpi_size)
+  #  print('>>>>grou_subset', group_subset)
+  #else:
+  #  seg_map = None
+  #  group_subset = None
+  #seg_map = mpi_comm.bcast(seg_map, 0)
+  #group_subset = mpi_comm.scatter(group_subset, 0)
+  #mpi_comm.barrier()
 
-  stage_seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage) 
+  #stage_seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage) 
 
 ##############3
   # Step 3: Agglome recursively
 
-  #stage = 0
-  #while len(seg_map.keys()) > 1:
-  #  if mpi_rank == 0:
-  #    max_group_id = infer_grid(seg_map)
-  #    print('max_group_id', max_group_id)
-  #    group_subset = np.array_split(np.arange(max_group_id), mpi_size)
-  #  else:
-  #    seg_map = None
-  #    group_subset = None
-  #  stage += 1
-  #  print('>>> stage', stage)
-  #  seg_map = mpi_comm.bcast(seg_map, 0)
-  #  group_subset = mpi_comm.scatter(group_subset)
-  #  seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage) 
+  stage = 0
+  while len(seg_map.keys()) > 1:
+    if mpi_rank == 0:
+      max_group_id = infer_grid(seg_map)
+      logging.warning('max_group_id: %d', max_group_id)
+      group_subset = np.array_split(np.arange(max_group_id), mpi_size)
+      print('rank:0 stage 1')
+      pprint(seg_map)
+    else:
+      seg_map = None
+      group_subset = None
+    logging.warning('>>> stage %d', stage)
+    seg_map = mpi_comm.bcast(seg_map, 0)
+    group_subset = mpi_comm.scatter(group_subset)
+    seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage) 
 
-  #  mpi_comm.barrier()
-  #  mergeOp = MPI.Op.Create(merge_dict, commute=True)
-  #  seg_map = mpi_comm.allreduce(seg_map, op=mergeOp)
-  #  break
-  #   stage_seg_map = stage_wise_agglomerate(stage_seg_map, args.output, stage=stage)
-  #   stage_seg_map = mpi_comm.bcast(stage_seg_map, 0)
-  # ####
+    mpi_comm.barrier()
+    mergeOp = MPI.Op.Create(merge_dict, commute=True)
+    seg_map = mpi_comm.allreduce(seg_map, op=mergeOp)
+    if mpi_rank == 0:
+      os.makedirs(args.output, exist_ok=True)
+      with open(os.path.join(args.output, 'stage_%d/config.pkl' % stage), 'wb') as fp:
+        pickle.dump(seg_map, fp)
+    stage += 1
+
+    # stage_seg_map = stage_wise_agglomerate(stage_seg_map, args.output, stage=stage)
+    # stage_seg_map = mpi_comm.bcast(stage_seg_map, 0)
+   ####
   #merge_output = os.path.join(args.output, 'stage_1')
   #agglomerate_group(seg_map, merge_output, 0)
 
