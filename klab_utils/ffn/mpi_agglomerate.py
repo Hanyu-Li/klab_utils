@@ -34,10 +34,14 @@ def get_bbox(path):
   offset = np.asarray([ox, oy, oz])
   size = np.asarray([sx, sy, sz])
   return Bbox(offset, offset + size)
+
+
 def get_bbox_from_cv(cvol):
   offset = np.array(cvol.info['scales'][0]['voxel_offset'])
   size = np.array(cvol.info['scales'][0]['size'])
   return Bbox(offset, offset + size)
+
+
 def find_remap(a, b):
   """find relabel map from a to b"""
   flat_a = a.ravel()
@@ -53,9 +57,12 @@ def find_remap(a, b):
       max_overlap_ids[label_a] = new_pair
   relabel_map = {k:v[0] for k,v in max_overlap_ids.items()}
   return relabel_map
+
+
 def perform_remap(a, relabel_map):
   remapped_a = fastremap.remap(a, relabel_map, preserve_missing_labels=True) 
   return remapped_a
+
 
 def update_mips(cv_path, bb, **kwargs):
   cvol = cloudvolume.CloudVolume('file://'+cv_path, mip=0, **kwargs)
@@ -71,11 +78,11 @@ def update_mips(cv_path, bb, **kwargs):
     data = data[::scaling[0], ::scaling[1], ::scaling[2]]
     cvol = cloudvolume.CloudVolume('file://'+cv_path, mip=m, **cv_args)
     cvol[bb] = data
-    pass
+
+
 def agglomerate(cv_path_1, cv_path_2, contiguous=False, inplace=False, 
                 no_zero=True):
-  """Given two cloudvolumes and bounding boxes, intersect and perform agglomeration"""
-  
+  """Given two cloudvolumes, intersect and perform agglomeration"""
   cv_args = dict(
     bounded=True, fill_missing=True, autocrop=False,
     cache=False, compress_cache=None, cdn_cache=False,
@@ -85,8 +92,6 @@ def agglomerate(cv_path_1, cv_path_2, contiguous=False, inplace=False,
   cv1 = cloudvolume.CloudVolume('file://'+cv_path_1, mip=0, **cv_args)
   cv2 = cloudvolume.CloudVolume('file://'+cv_path_2, mip=0, **cv_args)
 
-#   bb1 = get_bbox(cv_path_1)
-#   bb2 = get_bbox(cv_path_2)
   bb1 = get_bbox_from_cv(cv1)
   bb2 = get_bbox_from_cv(cv2)
   
@@ -102,7 +107,7 @@ def agglomerate(cv_path_1, cv_path_2, contiguous=False, inplace=False,
   # find remap from 2 to 1
   remap_label = find_remap(data_2, data_1)
   if no_zero:
-    # filter out all with either key or val == 0
+    # filter out ones with either key or val == 0
     remap_label = {k:v for k, v in remap_label.items() if k != 0 and v != 0}
   data_2_full = cv2[bb2]
   data_2_full_remap = perform_remap(data_2_full, remap_label)
@@ -110,11 +115,10 @@ def agglomerate(cv_path_1, cv_path_2, contiguous=False, inplace=False,
     cv2[bb2] = data_2_full_remap
     update_mips(cv_path_2, bb2, **cv_args)
   
-  
   return remap_label
   
 
-def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, dtype='uint32'):
+def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, factor=(2,2,1), dtype='uint32'):
   cv_args = dict(
     bounded=True, fill_missing=False, autocrop=False,
     cache=False, compress_cache=None, cdn_cache=False,
@@ -125,14 +129,12 @@ def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, 
     layer_type='segmentation',
     data_type=dtype,
     encoding='compressed_segmentation',
-    #encoding='raw',
     resolution=list(resolution),
     voxel_offset=np.array(offset),
-#     volume_size=size_xyz,
     volume_size=np.array(size),
     chunk_size=chunk_size,
     max_mip=0,
-    factor=(2,2,1),
+    factor=factor,
     )
   cv = CloudVolume('file://'+precomputed_path, mip=0, info=info, **cv_args)
   cv.commit_info()
@@ -147,21 +149,16 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices):
   seg_list.sort()
   
   seg_map = dict()
-  # global_max = 0
   for i in tqdm(sub_indices):
-  # for i, s in tqdm(enumerate(seg_list)):
-    # get_source = lambda s: glob.glob(os.path.join(s, '**/*.npz', recursive=True)[0]
-    s = seg_list[i]
-    seg, offset_zyx = load_inference(s)
-    # seg_name = get_source(s)
-    # offset_zyx = get_zyx(seg_name)
+    seg_path = seg_list[i]
+    seg, offset_zyx = load_inference(seg_path)
     offset_xyz = offset_zyx[::-1]
     size_xyz = seg.shape[::-1]
 
     bbox = Bbox(a=offset_xyz, b=offset_xyz+size_xyz)
     seg = np.transpose(seg, [2, 1, 0])
     
-    # # make labels contiguous and unique globally but keep 0 intact
+    # make labels contiguous and unique globally but keep 0 intact
     seg = np.uint32(seg)
     #zeros = seg==0
     seg, _ = make_labels_contiguous(seg)
@@ -171,15 +168,12 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices):
     # global_max = np.max(seg)
     # seg[zeros] = 0
 
-    # convert to precomputed
     
-    precomputed_path = os.path.join(output_dir, get_name(os.path.basename(s)))
-    # seg_map[i] = (bbox, precomputed_path)
-    # cv = prepare_precomputed(precomputed_path, offset_xyz, size_xyz, resolution, chunk_size)
-    # cv[bbox] = seg
+    precomputed_path = os.path.join(
+      output_dir, get_name(os.path.basename(seg_path)))
     seg_map[i] = {
       'bbox': bbox, 
-      'input': s, 
+      'input': seg_path, 
       'output': precomputed_path, 
       'resolution': resolution,
       'chunk_size': chunk_size,
@@ -194,7 +188,8 @@ def unify_ids(seg_map):
   for k in keys:
     seg_map[k]['global_offset'] = global_max
     global_max = seg_map[k]['local_max']
-  pass
+
+
 def update_ids_and_write(seg_map, sub_indices):
   for k in tqdm(sub_indices):
     s = seg_map[k]['input']
@@ -221,10 +216,8 @@ def update_ids_and_write(seg_map, sub_indices):
     cv = prepare_precomputed(precomputed_path, offset_xyz, size_xyz, resolution, chunk_size)
     cv[bbox] = seg
 
+
 def infer_grid_v0(seg_map):
-  # if mpi_rank == 0:
-  total = len(seg_map.keys())
-  #print(total)
   corners = []
   for k,v in seg_map.items():
     bb = v['bbox']
@@ -294,15 +287,12 @@ def infer_grid(seg_map):
   
   min_corner = np.min(corners, 0)
   corners = corners - min_corner
+  logging.warning('corners: %s', str(corners))
   gcd = np.gcd.reduce(corners)
+  gcd[gcd==0] = 1
+  # print(gcd)
   grid = corners // gcd
-#   print(grid)
-  #print('keys:', corner_keys)
-#   print(corners_keys)
-#   keys = list(seg_map.keys())
-#   keys.sort()
-#   for i, k in enumerate(keys):
-#     seg_map[k]['grid']=grid[i]
+  logging.warning('grid: %s', str(grid))
   for i, k in enumerate(corner_keys):
     seg_map[k]['grid']=grid[i]
 
@@ -326,9 +316,7 @@ def infer_grid(seg_map):
   grid_shape = grid[-1]+1
   #print(grid_shape)
   group_id = 0
-  # grid_to_id_map = {tuple(grid[i]):i for i in range(len(grid))}
   grid_to_id_map = {tuple(grid[i]):k for i,k in enumerate(corner_keys)}
-  #print(grid_to_id_map)
   for offset in itertools.product(range(0, grid_shape[0], 2),
                             range(0, grid_shape[1], 2),
                             range(0, grid_shape[2], 2)):
@@ -360,18 +348,6 @@ def agglomerate_group(seg_map, merge_output, gid=None, relabel=True):
     p2 = seg_map[k2]['output']
     if relabel:
       remap_label  = agglomerate(p1, p2, contiguous=False, inplace=True, no_zero=True)
-      #print(len(remap_label))
-  #if mpi_rank == 0:
-  #  max_group_id = infer_grid(seg_map)
-  #  print('max_group_id', max_group_id)
-  #  group_subset = np.array_split(np.arange(max_group_id), mpi_size)
-  #else:
-  #  seg_map = None
-  #  group_subset = None
-  #seg_map = mpi_comm.bcast(seg_map, 0)
-  #group_subset = mpi_comm.scatter(group_subset)
-
-  # stage_seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage) 
   return merge(seg_map, merge_output, gid)
 
 def stage_wise_agglomerate(seg_map, output, stage=0):
@@ -453,6 +429,9 @@ def merge(seg_map, merge_output, gid=None):
     val = cv[...]
     #logging.error('rank %d val_shape: %s, bbox %s', mpi_rank, val.shape, bb)
     #val_dict[bb] = val
+    curr_val = cv_merge[bb][:]
+    non_zeros = curr_val != 0
+    val[non_zeros] = curr_val[non_zeros]
     cv_merge[bb] = val
   return {gid: dict(
     bbox=union_bbox,
@@ -539,7 +518,6 @@ def main():
     help='output_directory')
   parser.add_argument('--resolution', type=str, default='6,6,40')
   parser.add_argument('--chunk_size', type=str, default='256,256,64')
-  #parser.add_argument('--no_relabel', action="store_false")
   parser.add_argument('--relabel', type=bool, default=True)
   args = parser.parse_args()
   resolution = [int(i) for i in args.resolution.split(',')]
@@ -597,28 +575,6 @@ def main():
   #if mpi_rank == 0:
   #  sequential_agglomerate(seg_map, merge_output)
 
-
-
-  
-  # Step 2: Agglom one step
-  #stage = 0
-  #print('>>> stage', stage)
-
-  #if mpi_rank == 0:
-  #  max_group_id = infer_grid(seg_map)
-  #  print('max_group_id', max_group_id)
-  #  group_subset = np.array_split(np.arange(max_group_id), mpi_size)
-  #  print('>>>>grou_subset', group_subset)
-  #else:
-  #  seg_map = None
-  #  group_subset = None
-  #seg_map = mpi_comm.bcast(seg_map, 0)
-  #group_subset = mpi_comm.scatter(group_subset, 0)
-  #mpi_comm.barrier()
-
-  #stage_seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage) 
-
-##############3
   # Step 3: Agglome recursively
 
   #relabel = not args.no_relabel
@@ -628,23 +584,13 @@ def main():
     mpi_comm.barrier()
     if mpi_rank == 0:
       max_group_id = infer_grid(seg_map)
-      #logging.warning('max_group_id: %d', max_group_id)
       group_subset = np.array_split(np.arange(max_group_id), mpi_size)
-      #print('rank:0 stage 1')
-      #pprint(seg_map)
     else:
       seg_map = None
       group_subset = None
-    #logging.warning('>>> stage %d', stage)
     seg_map = mpi_comm.bcast(seg_map, 0)
     group_subset = mpi_comm.scatter(group_subset)
     seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage, relabel=relabel) 
-    # group_seg_map = {}
-    # for gid in group_subset:
-    #   # group_seg_map[gid] = stage_wise_agglomerate_v3(seg_map, args.output, gid, stage=stage, relabel=relabel) 
-    #   result_dict = stage_wise_agglomerate_v3(seg_map, args.output, gid, stage=stage, relabel=relabel) 
-    #   assert gid in result_dict
-    #   seg_map[gid] = result_dict[gid]
 
     mpi_comm.barrier()
     mergeOp = MPI.Op.Create(merge_dict, commute=True)
@@ -656,65 +602,6 @@ def main():
         pickle.dump(seg_map, fp)
     stage += 1
 
-    # stage_seg_map = stage_wise_agglomerate(stage_seg_map, args.output, stage=stage)
-    # stage_seg_map = mpi_comm.bcast(stage_seg_map, 0)
-   ####
-  #merge_output = os.path.join(args.output, 'stage_1')
-  #agglomerate_group(seg_map, merge_output, 0)
-
-
-
-
-
-
-
-  ##############3
-
-  # # step 3: infer grid
-  # if mpi_rank == 0:
-  #   max_group_id = infer_grid(seg_map)
-  #   print('max_group_id', max_group_id)
-  #   group_subset = np.array_split(np.arange(max_group_id), mpi_size)
-  # else:
-  #   seg_map = None
-  #   group_subset = None
-  # seg_map = mpi_comm.bcast(seg_map, 0)
-  # group_subset = mpi_comm.scatter(group_subset)
-  # print('>> group_subset', group_subset)
-
-  # # step 4: perform (stage wise) merge operation 
-  # # grouped_seg_map = {k:v for k, v in seg_map.items() if 'group_id' in v and v['group_id'] == mpi_rank}
-  # # grouped_seg_map = {k:v for k, v in seg_map.items() if 'group_id' in v and v['group_id'] in group_subset[mpi_rank]}
-  # grouped_seg_map = {k:{} for k in group_subset}
-  # for k, v in seg_map.items():
-  #   gid = v['group_id']
-  #   if gid in group_subset:
-  #     grouped_seg_map[gid][k] = v 
-
-  # print('>>', mpi_rank, grouped_seg_map)
-
-  # prev_stage = os.path.join(args.output, 'stage_0')
-
-  # # recursively merge
-  # stage = 1
-  # # while(len(glob.glob(prev_stage, '*')) > 1)
-  # merge_output = os.path.join(args.output, 'stage_%d' % stage)
-  # stage_seg_map = {}
-  # for gid in group_subset:
-  #   stage_seg_map = agglomerate_group(grouped_seg_map[gid], merge_output, gid)
-  #   stage += 1
-  # stage_seg_map = mpi_comm.allreduce(stage_seg_map, op=mergeOp)
-  # if mpi_rank == 0:
-  #   print('>>>>', stage_seg_map)
-  #   if len(stage_seg_map.keys() > 1)
-    
-
-  ##############3
-
-  
-
-
-  # merge(seg_map, resolution, chunk_size)
 
 
   
