@@ -21,10 +21,12 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('input', type=str, help='path to cloud volume')
   parser.add_argument('--factor', type=str, default='2,2,1', help='downsample factor')
+  parser.add_argument('--level', type=int, default=1)
   args = parser.parse_args()
 
   factor = [int(i) for i in args.factor.split(',')]
-  add_mip(args.input, factor)
+  for i in range(args.level):
+    add_mip(args.input, factor)
 
 if __name__ == '__main__':
   main()

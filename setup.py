@@ -27,6 +27,7 @@ entry_points = {
         'klab_utils.neuroglancer.raw_to_precomputed_v2 = klab_utils.neuroglancer.raw_to_precomputed_v2:main',
         'klab_utils.neuroglancer.mesh_generator = klab_utils.neuroglancer.mesh_generator:main',
         'klab_utils.neuroglancer.mesh_generator_v2 = klab_utils.neuroglancer.mesh_generator_v2:main',
+        'klab_utils.neuroglancer.mesh_generator_v3 = klab_utils.neuroglancer.mesh_generator_v3:main',
         'klab_utils.neuroglancer.add_mip_level = klab_utils.neuroglancer.add_mip_level:main',
 
         # aligntk_related

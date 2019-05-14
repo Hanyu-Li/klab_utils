@@ -12,6 +12,11 @@ import argparse
 import os
 import subprocess
 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+host = MPI.Get_processor_name()
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--labels', default=None,
@@ -33,9 +38,9 @@ def main():
   # non mpi mode
   print("Making meshes...")
   with LocalTaskQueue(parallel=True) as tq:
-    tasks = tc.create_meshing_tasks(in_path, mip=mip, shape=(256, 256, 256), progress=True)
+    tasks = tc.create_meshing_tasks(in_path, mip=mip, shape=(256, 256, 256))
     tq.insert_all(tasks)
-    tasks = tc.create_mesh_manifest_tasks(in_path, magnitude=4, progress=True)
+    tasks = tc.create_mesh_manifest_tasks(in_path)
     print(len(tasks))
     tq.insert_all(tasks)
   print("Done!")
