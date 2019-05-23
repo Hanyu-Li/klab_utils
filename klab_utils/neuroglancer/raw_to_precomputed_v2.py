@@ -31,9 +31,9 @@ def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, flip_xy
   ''' f_sublist is a List[List[str]], inner list size == z_batch'''
   for fb in tqdm(f_sublist):
     if flip_xy:
-      loaded_vol = np.stack([np.transpose(io.imread(f)) for f in fb], axis=2)
+      loaded_vol = np.stack([np.transpose(io.imread(f)) for f in tqdm(fb, desc='loading')], axis=2)
     else:
-      loaded_vol = np.stack([io.imread(f) for f in fb], axis=2)
+      loaded_vol = np.stack([io.imread(f) for f in tqdm(fb, 'loading')], axis=2)
     diff = chunk_size[2] - loaded_vol.shape[2]
     if diff > 0:
       loaded_vol = np.pad(loaded_vol, ((0,0), (0,0), (0, diff)), 'constant', constant_values=0)
@@ -59,7 +59,14 @@ def divide_work(f_list, num_proc, z_batch, image_size, memory_limit):
   '''
   batched_f_list = np.split(np.asarray(
       f_list), np.arange(z_batch, len(f_list), z_batch))
-  f_sublists = np.array_split(batched_f_list, num_proc)
+  if num_proc > len(batched_f_list):
+    print('>>', num_proc, len(batched_f_list))
+    filled_num_proc = len(batched_f_list)
+
+  f_sublists = np.array_split(batched_f_list, filled_num_proc)
+  for _ in range(num_proc - filled_num_proc):
+    f_sublists.append([])
+  print('>>>', len(f_sublists))
 
   return f_sublists
 
@@ -147,6 +154,8 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
   cv_args = mpi_comm.bcast(cv_args, root=0)
   factor = mpi_comm.bcast(factor, root=0)
 
+  if not len(f_sublist):
+    return
   print('rank: %d, range: %s <-> %s' % (
       mpi_rank, f_sublist[0][0], f_sublist[-1][-1]))
   mpi_cloud_write(f_sublist, c_path, start_z, mip,

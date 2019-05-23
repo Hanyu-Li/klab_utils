@@ -41,7 +41,8 @@ def main():
   parser.add_argument('--iterations', default=8, type=int)
   parser.add_argument('--var_size', default=None, type=int) # e.g. 12 
   parser.add_argument('--var_thresh', default=None, type=int) # e.g. 25
-  parser.add_argument('--mask_image', default=False, type=bool) # e.g. 25
+  # parser.add_argument('--mask_image', default=False, type=bool) # e.g. 25
+  parser.add_argument('--mask_image', action='store_true')
   args = parser.parse_args()
 
   if mpi_rank == 0:

@@ -38,6 +38,7 @@ file = System.getProperty("input");
 f_pairs = System.getProperty("pairs");
 minOctave = Integer.parseInt(System.getProperty("min"));
 maxOctave = Integer.parseInt(System.getProperty("max"));
+beginning = Integer.parseInt(System.getProperty("begin"));
 System.out.println(f_pairs);
 pairs = null;
 if (f_pairs == null)
@@ -139,7 +140,7 @@ paramAffine.minInlierRatio = 0.0f;
 paramAffine.minNumInliers = 12;
 paramAffine.expectedModelIndex = 0;
 paramAffine.multipleHypotheses = true;
-paramAffine.rejectIdentity = false;
+paramAffine.rejectIdentity = true;
 paramAffine.identityTolerance = 0.0f;
 paramAffine.maxNumNeighbors = 10;
 paramAffine.maxNumFailures = 3;
@@ -191,7 +192,8 @@ paramElastic.maxPlateauwidthSpringMesh = 400;
 paramElastic.dampSpringMesh = 0.9f;
 paramElastic.useLegacyOptimizer = true;
 
-beginning = (int)layerset.getLayer(0).getZ();
+//beginning = (int)layerset.getLayer(0).getZ();
+//System.out.println("begin "+beginning);
 
 if (pairs == null)
 {
@@ -244,6 +246,14 @@ else
 
     p0 = pair.get(0) - beginning; 
     p1 = pair.get(1) - beginning;
+    //ending = 341;
+    //System.out.println("test" + p0);
+    //for(i = p0; i < ending; i++)
+    //{
+    //  dynLayerRange.add(layerset.getLayer(i));
+    //}
+
+
     dynLayerRange.add(layerset.getLayer(p0));
     dynLayerRange.add(layerset.getLayer(p1));
 

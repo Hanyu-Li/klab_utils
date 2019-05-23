@@ -1,4 +1,4 @@
-"""Agglomerate neighboring/overlapping cloud-volumes"""
+"""Agglomerate two neighboring/overlapping cloud-volumes"""
 import cloudvolume
 import re
 import numpy as np
@@ -117,42 +117,6 @@ def agglomerate(cv_path_1, cv_path_2, contiguous=False, inplace=False,
   
   return remap_label
   
-def agglomerate_v2(cv_path_1, cv_path_2, contiguous=False, inplace=False, 
-                no_zero=True):
-  """Given two cloudvolumes, intersect and perform agglomeration"""
-  cv_args = dict(
-    bounded=True, fill_missing=True, autocrop=False,
-    cache=False, compress_cache=None, cdn_cache=False,
-    progress=False, provenance=None, compress=True, 
-    non_aligned_writes=True, parallel=True)
-  
-  cv1 = cloudvolume.CloudVolume('file://'+cv_path_1, mip=0, **cv_args)
-  cv2 = cloudvolume.CloudVolume('file://'+cv_path_2, mip=0, **cv_args)
-
-  bb1 = get_bbox_from_cv(cv1)
-  bb2 = get_bbox_from_cv(cv2)
-  
-  int_bb = Bbox.intersection(bb1, bb2)
-  data_1 = cv1[int_bb]
-  data_2 = cv2[int_bb]
-  if contiguous:
-    data_1, map_1 = make_labels_contiguous(data_1)
-    data_2, map_2 = make_labels_contiguous(data_2)
-    
-  data_1 = np.uint32(data_1)
-  data_2 = np.uint32(data_2)
-  # find remap from 2 to 1
-  remap_label = find_remap(data_2, data_1)
-  if no_zero:
-    # filter out ones with either key or val == 0
-    remap_label = {k:v for k, v in remap_label.items() if k != 0 and v != 0}
-  data_2_full = cv2[bb2]
-  data_2_full_remap = perform_remap(data_2_full, remap_label)
-  if inplace:
-    cv2[bb2] = data_2_full_remap
-    update_mips(cv_path_2, bb2, **cv_args)
-  
-  return remap_label
 
 def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, factor=(2,2,1), dtype='uint32'):
   cv_args = dict(
@@ -185,12 +149,7 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices):
   seg_list.sort()
   
   seg_map = dict()
-  
-
-  pbar = tqdm(sub_indices, desc='Generating seg map')
-  for i in pbar:
-  # for i in tqdm(sub_indices):
-    # pbar.set_description("Generating Seg Map:")
+  for i in tqdm(sub_indices):
     seg_path = seg_list[i]
     seg, offset_zyx = load_inference(seg_path)
     offset_xyz = offset_zyx[::-1]
@@ -232,8 +191,7 @@ def unify_ids(seg_map):
 
 
 def update_ids_and_write(seg_map, sub_indices):
-  pbar = tqdm(sub_indices, desc='Update ids to be globally unique')
-  for k in pbar:
+  for k in tqdm(sub_indices):
     s = seg_map[k]['input']
     seg, offset_zyx = load_inference(s)
     offset_xyz = offset_zyx[::-1]
@@ -391,36 +349,6 @@ def agglomerate_group(seg_map, merge_output, gid=None, relabel=True):
     if relabel:
       remap_label  = agglomerate(p1, p2, contiguous=False, inplace=True, no_zero=True)
   return merge(seg_map, merge_output, gid)
-def agglomerate_group_v2(seg_map, merge_output, gid=None, relabel=True):
-  if seg_map == {}:
-    return {}
-  G = nx.Graph()
-  G.add_nodes_from(seg_map.keys())
-
-  # find neighbors
-  for k1, k2 in itertools.product(seg_map.keys(), seg_map.keys()):
-    bb1, p1 = seg_map[k1]['bbox'], seg_map[k1]['output']
-    bb2, p2 = seg_map[k2]['bbox'], seg_map[k2]['output']
-    int_bb = Bbox.intersection(bb1, bb2)
-    if not int_bb.empty() and k1 != k2:
-      G.add_edge(k1, k2)
-
-  G_overlap = nx.Graph()
-  # agglomerate each pair and rewrite cloud volume
-  for k1, k2 in G.edges():
-    p1 = seg_map[k1]['output']
-    p2 = seg_map[k2]['output']
-    if relabel:
-      remap_label  = agglomerate_v2(p1, p2, contiguous=False, inplace=False, no_zero=True)
-      # a dict of object ids from p2 -> p1
-      G_overlap.add_nodes_from(remap_label.keys())
-      G_overlap.add_nodes_from(remap_label.values())
-      edges = [(k, v) for k, v in remap_label.items()]
-      G_overlap.add_edges_from(edges)
-    
-  print('rank %d, %s' % (mpi_rank, G_overlap.edges))
-
-  return merge(seg_map, merge_output, gid)
 
 def stage_wise_agglomerate(seg_map, output, stage=0):
   pass
@@ -492,8 +420,9 @@ def merge(seg_map, merge_output, gid=None):
   #val_dict = dict()
   #print('>>>>rank: %d, map_keys %s' % (mpi_rank, str(seg_map.keys())))
 
-  pbar = tqdm(seg_map.values(), desc='merging')
-  for seg in pbar:
+  for seg in tqdm(seg_map.values()):
+#     print(bb, precom)
+
     bb = seg['bbox']
     cv = CloudVolume('file://'+seg['output'], mip=0, **cv_args)
 #     val = cv.download_to_shared_memory(np.s_[:], str(i))
@@ -540,34 +469,24 @@ def stage_wise_agglomerate_v2(seg_map, output, group_subset, stage=0, relabel=Tr
   return stage_seg_map
 
 
-def stage_wise_agglomerate_v3(seg_map, output, group_subset, stage=0, relabel=True):
+def stage_wise_agglomerate_v3(seg_map, output, gid, stage=0, relabel=True):
 
   # step 4: perform (stage wise) merge operation 
-  grouped_seg_map = {k:{} for k in group_subset}
+  # grouped_seg_map = {k:{} for k in group_subset}
+  group_seg_map = {}
   for k, v in seg_map.items():
     if 'group_id' not in v:
-      print('error>>', v)
-    gid = v['group_id']
-    if gid in group_subset:
-      grouped_seg_map[gid][k] = v 
+      logging.error('Not grouped, %d, %d', k, seg_map[k])
+    # gid = v['group_id']
+    if gid == v['group_id']:
+      group_seg_map[k] = v 
 
-  #print('>>', mpi_rank, len(grouped_seg_map.keys()))
-  #print('rank: %d >>>>>group_seg_map %s' %(mpi_rank,  grouped_seg_map))
-
+  #print('rank: %d >>>>>group_seg_map %s' %(mpi_rank,  group_seg_map))
 
   # recursively merge
   # stage = stage + 1
   merge_output = os.path.join(output, 'stage_%d' % stage)
-  stage_seg_map = {}
-  for gid in group_subset:
-    # stage_seg_map[gid] = agglomerate_group(grouped_seg_map[gid], merge_output, gid, relabel)
-    ret_dict = agglomerate_group_v2(grouped_seg_map[gid], merge_output, gid, relabel)
-    assert gid in ret_dict
-    stage_seg_map[gid] = ret_dict[gid]
-    #stage += 1
-  # if mpi_rank == 0:
-  #   print('>>>>', stage_seg_map)
-  return stage_seg_map
+  return agglomerate_group(group_seg_map, merge_output, gid, relabel)
 
 def sequential_agglomerate(seg_map, merge_output):
   G = nx.Graph()
