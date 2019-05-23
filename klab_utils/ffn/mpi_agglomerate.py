@@ -228,7 +228,7 @@ def unify_ids(seg_map):
   global_max = 0
   for k in keys:
     seg_map[k]['global_offset'] = global_max
-    global_max = seg_map[k]['local_max']
+    global_max += seg_map[k]['local_max']
 
 
 def update_ids_and_write(seg_map, sub_indices):
@@ -391,6 +391,21 @@ def agglomerate_group(seg_map, merge_output, gid=None, relabel=True):
     if relabel:
       remap_label  = agglomerate(p1, p2, contiguous=False, inplace=True, no_zero=True)
   return merge(seg_map, merge_output, gid)
+
+def get_merge_dict(G):
+  source_cube = nx.get_node_attributes(G, 'cube')
+  conn = nx.connected_components(G)
+
+  unique_cubes = np.unique(list(source_cube.values()))
+  global_merge_dict = {uid:{} for uid in unique_cubes}
+  for c in conn:
+    c = list(c)
+    c.sort()
+    for _c in c:
+      src_cube = source_cube[_c]
+      global_merge_dict[src_cube][_c] = c[0] 
+  return global_merge_dict 
+
 def agglomerate_group_v2(seg_map, merge_output, gid=None, relabel=True):
   if seg_map == {}:
     return {}
@@ -410,17 +425,26 @@ def agglomerate_group_v2(seg_map, merge_output, gid=None, relabel=True):
   for k1, k2 in G.edges():
     p1 = seg_map[k1]['output']
     p2 = seg_map[k2]['output']
-    if relabel:
-      remap_label  = agglomerate_v2(p1, p2, contiguous=False, inplace=False, no_zero=True)
-      # a dict of object ids from p2 -> p1
-      G_overlap.add_nodes_from(remap_label.keys())
-      G_overlap.add_nodes_from(remap_label.values())
-      edges = [(k, v) for k, v in remap_label.items()]
-      G_overlap.add_edges_from(edges)
-    
-  print('rank %d, %s' % (mpi_rank, G_overlap.edges))
+    #if relabel:
+    remap_label  = agglomerate_v2(p1, p2, contiguous=False, inplace=False, no_zero=True)
+    # a dict of object ids from p2 -> p1
+    #src_attr = {k:{'cube': k2} for k in remap_label.keys()}
+    #tgt_attr = {k:{'cube': k1} for k in remap_label.keys()}
 
-  return merge(seg_map, merge_output, gid)
+
+    G_overlap.add_nodes_from(remap_label.keys(), cube=k2)
+    G_overlap.add_nodes_from(remap_label.values(), cube=k1)
+    edges = [(k, v) for k, v in remap_label.items()]
+    G_overlap.add_edges_from(edges)
+    global_merge_dict = get_merge_dict(G_overlap)
+
+
+    
+  pprint('rank %d, %s' % (mpi_rank, global_merge_dict))
+  with open('test_graph%d.pkl' % mpi_rank, 'wb') as fp:
+    pickle.dump(G_overlap, fp)
+
+  return merge_graph(seg_map, merge_output, global_merge_dict, gid)
 
 def stage_wise_agglomerate(seg_map, output, stage=0):
   pass
@@ -498,6 +522,56 @@ def merge(seg_map, merge_output, gid=None):
     cv = CloudVolume('file://'+seg['output'], mip=0, **cv_args)
 #     val = cv.download_to_shared_memory(np.s_[:], str(i))
     val = cv[...]
+    #logging.error('rank %d val_shape: %s, bbox %s', mpi_rank, val.shape, bb)
+    #val_dict[bb] = val
+    curr_val = cv_merge[bb][:]
+    non_zeros = curr_val != 0
+    val[non_zeros] = curr_val[non_zeros]
+    cv_merge[bb] = val
+  return {gid: dict(
+    bbox=union_bbox,
+    output=cv_merge_path,
+    resolution=resolution,
+    chunk_size=chunk_size,
+  )}
+def merge_graph(seg_map, merge_output, global_merge_dict, gid=None):
+  resolution = list(seg_map.values())[0]['resolution']
+  chunk_size = list(seg_map.values())[0]['chunk_size']
+  bbox_list = [v['bbox'] for v in seg_map.values()]
+  minpt = np.min(np.stack([np.array(b.minpt) for b in bbox_list], 0), axis=0)
+  maxpt = np.max(np.stack([np.array(b.maxpt) for b in bbox_list], 0), axis=0)
+  
+  union_offset = minpt
+  union_size = maxpt - minpt
+  union_bbox = Bbox(minpt, maxpt)
+  #print(union_bbox)
+  # create new canvas
+  cv_merge_path = '%s/precomputed-%d_%d_%d_%d_%d_%d/' % (merge_output, 
+                                                         union_offset[0], union_offset[1], union_offset[2],
+                                                         union_size[0],  union_size[1], union_size[2])
+  #print(cv_merge_path)
+  cv_merge = prepare_precomputed(cv_merge_path, offset=union_offset, size=union_size, resolution=resolution, 
+                      chunk_size=chunk_size)
+  #print(cv_merge.shape)
+  # Pre paint the cv with 0
+  cv_merge[union_bbox] = np.zeros((union_size), dtype=np.uint32)
+  
+  cv_args = dict(
+    bounded=True, fill_missing=True, autocrop=False,
+    cache=False, compress_cache=None, cdn_cache=False,
+    progress=False, provenance=None, compress=True, 
+    non_aligned_writes=True, parallel=False)
+  
+  #val_dict = dict()
+  #print('>>>>rank: %d, map_keys %s' % (mpi_rank, str(seg_map.keys())))
+
+  pbar = tqdm(seg_map.items(), desc='merging')
+  for seg_key, seg in pbar:
+    bb = seg['bbox']
+    cv = CloudVolume('file://'+seg['output'], mip=0, **cv_args)
+#     val = cv.download_to_shared_memory(np.s_[:], str(i))
+    val = cv[...]
+    val = perform_remap(val, global_merge_dict[seg_key])
     #logging.error('rank %d val_shape: %s, bbox %s', mpi_rank, val.shape, bb)
     #val_dict[bb] = val
     curr_val = cv_merge[bb][:]
@@ -673,7 +747,7 @@ def main():
       group_subset = None
     seg_map = mpi_comm.bcast(seg_map, 0)
     group_subset = mpi_comm.scatter(group_subset)
-    seg_map = stage_wise_agglomerate_v2(seg_map, args.output, group_subset, stage=stage, relabel=relabel) 
+    seg_map = stage_wise_agglomerate_v3(seg_map, args.output, group_subset, stage=stage, relabel=relabel) 
 
     mpi_comm.barrier()
     mergeOp = MPI.Op.Create(merge_dict, commute=True)
