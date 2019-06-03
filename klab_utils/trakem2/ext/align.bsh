@@ -256,6 +256,7 @@ else
 
     dynLayerRange.add(layerset.getLayer(p0));
     dynLayerRange.add(layerset.getLayer(p1));
+    dynLayerRange.add(layerset.getLayer(p1+1));
 
     fixLayerRange = new HashSet();
     fixLayerRange.add(layerset.getLayer(p0));

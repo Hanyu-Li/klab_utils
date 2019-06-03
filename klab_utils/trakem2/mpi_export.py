@@ -61,7 +61,7 @@ def main():
       sub_range = [int(i) for i in args.range.split(',')]
       keys = np.asarray(range(sub_range[0], sub_range[1]))
       key_sublist = np.array_split(keys, mpi_size)
-    begin = key_sublist[0][0]
+    begin = get_keys(args.input)[0][0]
   else:
     pass
     key_sublist = None

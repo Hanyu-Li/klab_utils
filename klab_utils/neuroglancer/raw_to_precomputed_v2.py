@@ -62,6 +62,8 @@ def divide_work(f_list, num_proc, z_batch, image_size, memory_limit):
   if num_proc > len(batched_f_list):
     print('>>', num_proc, len(batched_f_list))
     filled_num_proc = len(batched_f_list)
+  else:
+    filled_num_proc = num_proc
 
   f_sublists = np.array_split(batched_f_list, filled_num_proc)
   for _ in range(num_proc - filled_num_proc):

@@ -80,7 +80,7 @@ for (i = r0; i<=r1; i++)
 {
   ind = i - begin;
   layer = layerRange.get(ind);
-  // System.out.println(layer);
+  System.out.println(layer);
   flat = loader.getFlatImage(
     layer, 
     roi,

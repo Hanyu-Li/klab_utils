@@ -422,7 +422,8 @@ def agglomerate_group_v2(seg_map, merge_output, gid=None, relabel=True):
 
   G_overlap = nx.Graph()
   # agglomerate each pair and rewrite cloud volume
-  for k1, k2 in G.edges():
+  pbar = tqdm(G.edges(), total=G.number_of_edges(), desc='find overlap')
+  for k1, k2 in pbar:
     p1 = seg_map[k1]['output']
     p2 = seg_map[k2]['output']
     #if relabel:
@@ -440,9 +441,9 @@ def agglomerate_group_v2(seg_map, merge_output, gid=None, relabel=True):
 
 
     
-  pprint('rank %d, %s' % (mpi_rank, global_merge_dict))
-  with open('test_graph%d.pkl' % mpi_rank, 'wb') as fp:
-    pickle.dump(G_overlap, fp)
+  # pprint('rank %d, %s' % (mpi_rank, global_merge_dict))
+  # with open('test_graph%d.pkl' % mpi_rank, 'wb') as fp:
+  #   pickle.dump(G_overlap, fp)
 
   return merge_graph(seg_map, merge_output, global_merge_dict, gid)
 
@@ -571,7 +572,9 @@ def merge_graph(seg_map, merge_output, global_merge_dict, gid=None):
     cv = CloudVolume('file://'+seg['output'], mip=0, **cv_args)
 #     val = cv.download_to_shared_memory(np.s_[:], str(i))
     val = cv[...]
-    val = perform_remap(val, global_merge_dict[seg_key])
+    # print('keys: %s <-> %s' % (seg_key, global_merge_dict.keys()))
+    if seg_key in global_merge_dict:
+      val = perform_remap(val, global_merge_dict[seg_key])
     #logging.error('rank %d val_shape: %s, bbox %s', mpi_rank, val.shape, bb)
     #val_dict[bb] = val
     curr_val = cv_merge[bb][:]
@@ -680,20 +683,17 @@ def main():
   resolution = [int(i) for i in args.resolution.split(',')]
   chunk_size = [int(i) for i in args.chunk_size.split(',')]
 
-  # step 1: MPI read and get local_max
-  config_path = os.path.join(args.output, 'config.pkl')
+  config_path = os.path.join(args.output, 'stage_0/config.pkl')
   if os.path.exists(config_path):
-  # if False:
     if mpi_rank == 0:
       with open(config_path, 'rb') as fp:
         seg_map = pickle.load(fp)
-        #print('unpickled: ')
-        #pprint(seg_map)
     else:
       seg_map = None
     seg_map = mpi_comm.bcast(seg_map, 0)
     
   else:
+    # step 1: MPI read and get local_max
     if mpi_rank == 0:
       seg_list = glob.glob(os.path.join(args.input, 'seg-*'))
       seg_list.sort()
@@ -718,10 +718,6 @@ def main():
     update_ids_and_write(seg_map, sub_indices)
 
     if mpi_rank == 0:
-      # os.makedirs(args.output, exist_ok=True)
-      # with open(os.path.join(args.output, 'stage_0/config.pkl'), 'wb') as fp:
-      #   #pprint(seg_map)
-      #   pickle.dump(seg_map, fp)
       stage_out_dir = os.path.join(args.output, 'stage_0')
       os.makedirs(stage_out_dir, exist_ok=True)
       with open(os.path.join(stage_out_dir, 'config.pkl'), 'wb') as fp:
@@ -732,9 +728,7 @@ def main():
   #if mpi_rank == 0:
   #  sequential_agglomerate(seg_map, merge_output)
 
-  # Step 3: Agglome recursively
-
-  #relabel = not args.no_relabel
+  # Step 3: Agglomerate recursively
   relabel = args.relabel
   stage = 1
   while len(seg_map.keys()) > 1:
