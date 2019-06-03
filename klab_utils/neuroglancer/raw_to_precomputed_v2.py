@@ -74,7 +74,7 @@ def divide_work(f_list, num_proc, z_batch, image_size, memory_limit):
 
 
 def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
-                         chunk_size, offset, resolution, flip_xy, memory_limit=10000):
+                         chunk_size, offset, resolution, factor, flip_xy, memory_limit=10000):
   '''Converts a stack of images to cloudvolume.'''
   if mpi_rank == 0:
     f_list = glob.glob(os.path.join(input_dir, '*.*'))
@@ -100,7 +100,7 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
     f_sublist = divide_work(
         f_list, mpi_size, chunk_size[2], im_size, memory_limit)
     c_path = 'file://' + os.path.join(output_dir, layer_type)
-    factor = [2, 2, 1]
+    # factor = [2, 2, 1]
 
     if layer_type == 'image':
       encoding = 'raw'
@@ -176,6 +176,7 @@ def main():
   parser.add_argument('--mip', type=int, default=3)
   parser.add_argument('--chunk_size', type=str, default='64,64,64')
   parser.add_argument('--z_step', type=int, default=None)
+  parser.add_argument('--factor', type=str, default='2,2,1')
   parser.add_argument('--flip_xy', action="store_true")
   parser.add_argument('--memory_limit', type=float, default=10000)
   parser.add_argument('--offset', type=str, default='0,0,0')
@@ -185,27 +186,32 @@ def main():
   resolution = tuple(int(d) for d in args.resolution.split(','))
   chunk_size = tuple(int(d) for d in args.chunk_size.split(','))
   offset = tuple(int(d) for d in args.offset.split(','))
+  factor = tuple(int(d) for d in args.factor.split(','))
 
   if args.image_dir:
-    stack_to_cloudvolume(args.image_dir, args.output_dir,
-                        layer_type='image', #data_type='uint8',
-                        mip=args.mip,
-                        chunk_size=chunk_size,
-                        offset=offset,
-                        resolution=resolution,
-                        flip_xy=args.flip_xy,
-                        memory_limit=args.memory_limit)
+    stack_to_cloudvolume(
+      args.image_dir, 
+      args.output_dir,
+      layer_type='image', #data_type='uint8',
+      mip=args.mip,
+      chunk_size=chunk_size,
+      offset=offset,
+      resolution=resolution,
+      factor=factor,
+      flip_xy=args.flip_xy,
+      memory_limit=args.memory_limit)
   if args.label_dir:
-    stack_to_cloudvolume(args.label_dir, args.output_dir,
-                       layer_type='segmentation', #data_type='uint32',
-                       mip=args.mip,
-                       chunk_size=chunk_size,
-                       offset=offset,
-                       resolution=resolution,
-                       flip_xy=args.flip_xy,
-                       memory_limit=args.memory_limit)
-
-  # get
+    stack_to_cloudvolume(
+      args.label_dir, 
+      args.output_dir,
+      layer_type='segmentation', #data_type='uint32',
+      mip=args.mip,
+      chunk_size=chunk_size,
+      offset=offset,
+      resolution=resolution,
+      factor=factor,
+      flip_xy=args.flip_xy,
+      memory_limit=args.memory_limit)
 
 
 if __name__ == '__main__':
