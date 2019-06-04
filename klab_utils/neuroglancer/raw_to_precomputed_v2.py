@@ -45,8 +45,18 @@ def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, flip_xy
       offset = cv.mip_voxel_offset(m)
       step = np.array(factor)**m
       cv_z_start = actual_z // step[2] + offset[2]
-      cv_z_size = loaded_vol.shape[2] // step[2]
 
+      # diff = chunk_size[2] - loaded_vol.shape[2]
+      # if diff > 0:
+      #   loaded_vol = np.pad(loaded_vol, ((0,0), (0,0), (0, diff)), 'constant', constant_values=0)
+
+      # cv_z_size = loaded_vol.shape[2] // step[2]
+      cv_z_size = loaded_vol.shape[2]
+      logging.warn('mip %d, writing %s %s', m, cv_z_start, cv_z_size)
+      # cv_z_size = loaded_vol.shape[2] 
+
+      # if cv_z_size < chunk_size[2]:
+      #   cv[:, :, cv_z_start:cv_z_start + chunk_size[2]] = 0
       cv[:, :, cv_z_start:cv_z_start + cv_z_size] = loaded_vol
       loaded_vol = loaded_vol[::factor[0], ::factor[1], ::factor[2]]
     del loaded_vol
@@ -123,13 +133,14 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
         resolution=list(resolution),
         voxel_offset=np.array(offset),
         volume_size=[X, Y, pad_Z],
+        # volume_size=[X, Y, Z],
         chunk_size=chunk_size,
         max_mip=mip,
         factor=factor,
         # compressed_segmentation_block_size=compressed_segmentation_block_size,
     )
     cv_args = dict(
-        bounded=True, fill_missing=False, autocrop=False,
+        bounded=True, fill_missing=True, autocrop=False,
         cache=False, compress_cache=None, cdn_cache=False,
         progress=False, info=info, provenance=None, compress=compress, 
         non_aligned_writes=True, parallel=1)
