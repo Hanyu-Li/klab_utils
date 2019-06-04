@@ -423,6 +423,7 @@ def agglomerate_group_v2(seg_map, merge_output, gid=None, relabel=True):
   G_overlap = nx.Graph()
   # agglomerate each pair and rewrite cloud volume
   pbar = tqdm(G.edges(), total=G.number_of_edges(), desc='find overlap')
+  global_merge_dict = {}
   for k1, k2 in pbar:
     p1 = seg_map[k1]['output']
     p2 = seg_map[k2]['output']

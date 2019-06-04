@@ -27,13 +27,15 @@ def _find_index(fname):
   return int(res.group(1))
 
 
-def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, flip_xy, cv_args):
+def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, flip_xy, cast, cv_args):
   ''' f_sublist is a List[List[str]], inner list size == z_batch'''
   for fb in tqdm(f_sublist):
     if flip_xy:
       loaded_vol = np.stack([np.transpose(io.imread(f)) for f in tqdm(fb, desc='loading')], axis=2)
     else:
       loaded_vol = np.stack([io.imread(f) for f in tqdm(fb, 'loading')], axis=2)
+    if cast:
+      loaded_vol = loaded_vol.astype(np.uint32)
     diff = chunk_size[2] - loaded_vol.shape[2]
     if diff > 0:
       loaded_vol = np.pad(loaded_vol, ((0,0), (0,0), (0, diff)), 'constant', constant_values=0)
@@ -52,7 +54,7 @@ def mpi_cloud_write(f_sublist, c_path, start_z, mip, factor, chunk_size, flip_xy
 
       # cv_z_size = loaded_vol.shape[2] // step[2]
       cv_z_size = loaded_vol.shape[2]
-      logging.warn('mip %d, writing %s %s', m, cv_z_start, cv_z_size)
+      # logging.warn('mip %d, writing %s %s', m, cv_z_start, cv_z_size)
       # cv_z_size = loaded_vol.shape[2] 
 
       # if cv_z_size < chunk_size[2]:
@@ -125,6 +127,8 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
     print(pad_X, pad_Y, pad_Z)
  
 
+    if layer_type == 'segmentation':
+      data_type = 'uint32'
     info = CloudVolume.create_new_info(
         num_channels=1,
         layer_type=layer_type,
@@ -171,8 +175,10 @@ def stack_to_cloudvolume(input_dir, output_dir, layer_type, mip,
     return
   print('rank: %d, range: %s <-> %s' % (
       mpi_rank, f_sublist[0][0], f_sublist[-1][-1]))
+  
+  cast = layer_type == 'segmentation'
   mpi_cloud_write(f_sublist, c_path, start_z, mip,
-                  factor, chunk_size, flip_xy, cv_args)
+                  factor, chunk_size, flip_xy, cast, cv_args)
   return
 
 # @profile
