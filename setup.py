@@ -51,6 +51,8 @@ entry_points = {
         'klab_utils.ffn.export_inference = klab_utils.ffn.export_inference:main',
         'klab_utils.ffn.agglomerate = klab_utils.ffn.agglomerate:main',
         'klab_utils.ffn.mpi_agglomerate = klab_utils.ffn.mpi_agglomerate:main',
+        'klab_utils.ffn.mpi_agglomerate_v2 = klab_utils.ffn.mpi_agglomerate_v2:main',
+        'klab_utils.ffn.mpi_agglomerate_h5 = klab_utils.ffn.mpi_agglomerate_h5:main',
     ]
 }
 install_requires = [

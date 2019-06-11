@@ -214,8 +214,8 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices):
       output_dir, get_name(os.path.basename(seg_path)))
     seg_map[i] = {
       'bbox': bbox, 
-      'input': seg_path, 
-      'output': precomputed_path, 
+      'input': os.path.abspath(seg_path), 
+      'output': os.path.abspath(precomputed_path), 
       'resolution': resolution,
       'chunk_size': chunk_size,
       'local_max': local_max}

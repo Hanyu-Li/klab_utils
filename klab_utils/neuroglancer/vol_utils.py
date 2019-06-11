@@ -36,11 +36,19 @@ def get_stack_data(image_dir):
   vol = np.stack([io.imread(f) for f in f_list], -1)
   return vol
 
-def get_cv_data(cv_path, offset_xyz, size_xyz):
-  full_cv = cloudvolume.CloudVolume('file://%s' % cv_path, mip=0, parallel=True)
+# def get_cv_data(cv_path, offset_xyz, size_xyz):
+#   full_cv = cloudvolume.CloudVolume('file://%s' % cv_path, mip=0, parallel=True)
                     
-  bbox = [cloudvolume.Bbox(i, i + j) for i,j in zip(offset_xyz, size_xyz)]
-  return np.concatenate([full_cv[b] for b in bbox], 2)[...,0]
+#   bbox = [cloudvolume.Bbox(i, i + j) for i,j in zip(offset_xyz, size_xyz)]
+#   return np.concatenate([full_cv[b] for b in bbox], 2)[...,0]
+def get_cv_data(cv_path, offset_xyz, size_xyz):
+  full_cv = cloudvolume.CloudVolume('file://%s' % cv_path, mip=0, parallel=True, progress=False)
+                    
+  offset_xyz = np.array(offset_xyz)
+  size_xyz = np.array(size_xyz)
+  bbox = cloudvolume.Bbox(offset_xyz, offset_xyz + size_xyz) 
+
+  return full_cv[bbox][...,0]
 
 
 def write_vol(vol, output_dir, z_axis=2, start_ind=0):
