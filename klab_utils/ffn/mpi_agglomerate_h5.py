@@ -394,10 +394,20 @@ def remap_and_write(seg_map, union_bbox, cv_merge_path, global_merge_dict, sub_i
 def prewrite_h5(union_bbox, h5_path, resolution, chunk_size):
   union_offset = np.array(union_bbox.minpt)
   union_size = np.array(union_bbox.maxpt) - np.array(union_bbox.minpt)
+  # padded_union_size = 
+  # padded_union_size = ((union_size-1) // chunk_size + 1 ) * chunk_size
   # write in xyz order
+  # with h5py.File(h5_path, 'w', driver='mpio', comm=mpi_comm) as f:
   with h5py.File(h5_path, 'w') as f:
     # f.create_dataset('output', shape=tuple(union_size[::-1]), dtype=np.uint32, chunks=tuple(chunk_size[::-1]))
-    f.create_dataset('output', shape=tuple(union_size), dtype=np.uint32, chunks=tuple(chunk_size))
+    logging.warning('created %s, %s', union_size, chunk_size)
+    # f.create_dataset('output', shape=tuple(union_size), dtype=np.uint32, chunks=tuple(chunk_size), fillvalue=0)
+    # f.create_dataset('output', shape=tuple(union_size), dtype=np.uint32, chunks=tuple(chunk_size))
+    f.create_dataset('output', shape=tuple(union_size), dtype=np.uint32)
+    # f.create_dataset('output', shape=tuple(union_size), dtype=np.uint32)
+
+    # ds = f.create_dataset('output', shape=tuple(padded_union_size), dtype=np.uint32, chunks=tuple(chunk_size), fillvalue=0)
+    # ds[...] = 0
   # cv_merge = prepare_precomputed(
   #   cv_merge_path, 
   #   offset=union_offset, 
@@ -427,15 +437,41 @@ def remap_and_write_h5(seg_map, union_bbox, h5_path, global_merge_dict, sub_indi
     cache=False, compress_cache=None, cdn_cache=False,
     progress=False, provenance=None, compress=False, 
     non_aligned_writes=False, parallel=True)
-  # cv_merge = prepare_precomputed(
-  #   cv_merge_path, 
-  #   offset=union_offset, 
-  #   size=union_size, 
-  #   resolution=resolution, 
-  #   chunk_size=chunk_size)
-  # Pre paint the cv with 0
-  # cv_merge[union_bbox] = np.zeros((union_size), dtype=np.uint32)
+  # with h5py.File(h5_path, 'r+', driver='mpio', comm=mpi_comm) as f:
+  #   logging.warning(f.keys())
+  #   ds = f['output']
+  #   logging.warn('rank: %d sees %s', mpi_rank, ds.shape)
+  #   pbar = tqdm(sub_indices, desc='merging')
+  #   for seg_key in pbar:
+  #     seg = seg_map[seg_key]
+  #     bb = seg['bbox']
+  #     cv = CloudVolume('file://'+seg['output'], mip=0, **cv_args)
+  # #     val = cv.download_to_shared_memory(np.s_[:], str(i))
+  #     val = np.array(cv[...])[...,0]
+
+  #     logging.warning('from cv %s', val.shape)
+  #     # relative slc in h5 write
+  #     slc = np.s_[
+  #       bb.minpt[0]-union_offset[0]:bb.maxpt[0]-union_offset[0],
+  #       bb.minpt[1]-union_offset[1]:bb.maxpt[1]-union_offset[1],
+  #       bb.minpt[2]-union_offset[2]:bb.maxpt[2]-union_offset[2]
+  #     ]
+
+  #     # print('keys: %s <-> %s' % (seg_key, global_merge_dict.keys()))
+  #     if seg_key in global_merge_dict:
+  #       val = perform_remap(val, global_merge_dict[seg_key])
+  #     #logging.error('rank %d val_shape: %s, bbox %s', mpi_rank, val.shape, bb)
+  #     #val_dict[bb] = val
+  #     curr_val = ds[slc][:]
+  #     logging.warning('from h5 %s', curr_val.shape)
+  #     non_zeros = curr_val != 0
+  #     logging.warning('non_zeros %s', np.sum(non_zeros[:]))
+  #     val[non_zeros] = curr_val[non_zeros]
+  #     # cv_merge[bb] = val
+  #     ds[slc] = val[...]
+
   with h5py.File(h5_path, 'r+', driver='mpio', comm=mpi_comm) as f:
+    logging.warning(f.keys())
     ds = f['output']
     logging.warn('rank: %d sees %s', mpi_rank, ds.shape)
     pbar = tqdm(sub_indices, desc='merging')
@@ -467,12 +503,7 @@ def remap_and_write_h5(seg_map, union_bbox, h5_path, global_merge_dict, sub_indi
       # cv_merge[bb] = val
       ds[slc] = val[...]
 
-    # return dict(
-    #   bbox=union_bbox,
-    #   output=cv_merge_path,
-    #   resolution=resolution,
-    #   chunk_size=chunk_size,
-    # )
+
 def get_chunk_bboxes(union_bbox, chunk_size):
   # union_size = np.array(union_bbox.maxpt) - np.array(union_bbox.minpt)
   # padded_union_size = ((union_size-1) // chunk_size + 1 ) * chunk_size
@@ -592,13 +623,17 @@ def main():
       with open(os.path.join(stage_out_dir, 'config.pkl'), 'wb') as fp:
         pickle.dump(seg_map, fp)
   # Graph merge:
-  h5_path = os.path.join(args.output, 'stage_1_h5/test.h5')
+  graph_path = os.path.join(args.output, 'stage_1_h5/graph.pkl')
+  os.makedirs(os.path.dirname(graph_path), exist_ok=True)
+  h5_path = os.path.abspath(os.path.join(args.output, 'stage_1_h5/test.h5'))
   merge_output = os.path.join(args.output, 'stage_1')
   union_bbox, cv_merge_path = get_union_bbox_and_merge_path(seg_map, merge_output)
-  os.makedirs(os.path.dirname(h5_path), exist_ok=True)
-  if os.path.exists(h5_path):
+
+  if os.path.exists(graph_path):
     # already writen h5 path, skip this step
-    logging.warning('Found h5 file, skipped h5 writing')
+    logging.warning('Found graph, skipped graph gen')
+    with open(graph_path, 'rb') as fp:
+      G_overlap = pickle.load(fp)
   else:
     mpi_comm.barrier()
     if mpi_rank == 0:
@@ -618,6 +653,18 @@ def main():
     mpi_comm.barrier()
     mergeGraphOp = MPI.Op.Create(merge_g_op, commute=True)
     G_overlap = mpi_comm.allreduce(G_overlap, op=mergeGraphOp)
+    if mpi_rank == 0:
+      # stage_out_dir = os.path.join(args.output, 'stage_0')
+      # os.makedirs(stage_out_dir, exist_ok=True)
+      with open(graph_path, 'wb') as fp:
+        pickle.dump(G_overlap, fp)
+
+
+
+  if os.path.exists(h5_path):
+    # already writen h5 path, skip this step
+    logging.warning('Found h5 file, skipped h5 writing')
+  else:
 
     # perform parallel write to an mpi h5 file to avoid racing
     if mpi_rank == 0:
@@ -625,7 +672,7 @@ def main():
       # pprint(global_remap_dict)
       sub_indices = np.array_split(list(global_remap_dict.keys()), mpi_size)
       # set up h5 dataset canvas
-      union_bbox, cv_merge_path = get_union_bbox_and_merge_path(seg_map, merge_output)
+      # union_bbox, cv_merge_path = get_union_bbox_and_merge_path(seg_map, merge_output)
       # prewrite(union_bbox, cv_merge_path, resolution, chunk_size)
       prewrite_h5(union_bbox, h5_path, resolution, chunk_size)
 
@@ -642,6 +689,7 @@ def main():
     cv_merge_path = mpi_comm.bcast(cv_merge_path, 0)
     h5_path = mpi_comm.bcast(h5_path, 0)
 
+    logging.warning('diagnose: %s %s', union_bbox, h5_path)
     remap_and_write_h5(seg_map, union_bbox, h5_path, global_remap_dict, sub_indices)
 
     # final stage: write from h5 to a cloud volume 

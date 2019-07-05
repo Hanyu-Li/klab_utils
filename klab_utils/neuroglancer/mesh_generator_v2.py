@@ -33,9 +33,9 @@ def main():
   # non mpi mode
   print("Making meshes...")
   with LocalTaskQueue(parallel=True) as tq:
-    tasks = tc.create_meshing_tasks(in_path, mip=mip, shape=(256, 256, 256), progress=True)
+    tasks = tc.create_meshing_tasks(in_path, mip=mip, shape=dim_size, progress=True)
     tq.insert_all(tasks)
-    tasks = tc.create_mesh_manifest_tasks(in_path, magnitude=4, progress=True)
+    tasks = tc.create_mesh_manifest_tasks(in_path, magnitude=4)
     print(len(tasks))
     tq.insert_all(tasks)
   print("Done!")
