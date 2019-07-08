@@ -165,7 +165,13 @@ def write_tmp_image_lst(image_lst, groups, sub_range, outputs):
 
   # find sub_range
   lines_dict = {_find_index(l):l for l in lines}
-  sub_range_lines = [lines_dict[i] for i in range(sub_range[0], sub_range[1]+1)]
+
+  all_keys = list(lines_dict.keys())
+  all_keys.sort()
+  sub_range_keys = [i for i in all_keys if i >= sub_range[0] and i <= sub_range[1]]
+  sub_range_lines = [lines_dict[i] for i in sub_range_keys]
+
+  # sub_range_lines = [lines_dict[i] for i in range(sub_range[0], sub_range[1]+1)]
   print('Apply from %s to %s' % (sub_range_lines[0].rstrip(), sub_range_lines[-1].rstrip()))
 
   line_sets = np.array_split(np.asarray(sub_range_lines), groups)
