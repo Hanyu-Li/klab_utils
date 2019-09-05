@@ -28,12 +28,19 @@ def get_h5_data(h5_paths, flip=True):
     ref_data = np.transpose(ref_data, [2,1,0])
   return ref_data
 
-def get_stack_data(image_dir):
+def get_stack_data(image_dir, axes='zyx'):
   f_list = glob.glob(os.path.join(image_dir, '*.*'))
 #   print(f_list)
   get_ind = lambda f: int(re.search(r'(\d+)\..*', f).group(1))
   f_list.sort(key=get_ind)
-  vol = np.stack([io.imread(f) for f in f_list], -1)
+  if axes == 'zyx':
+    vol = np.stack([io.imread(f) for f in f_list], 0)
+  elif axes == 'yxz':
+    vol = np.stack([io.imread(f) for f in f_list], -1)
+  elif axes == 'xyz':
+    vol = np.stack([io.imread(f) for f in f_list], 0)
+    vol = np.transpose(vol, [2, 1, 0])
+
   return vol
 
 # def get_cv_data(cv_path, offset_xyz, size_xyz):

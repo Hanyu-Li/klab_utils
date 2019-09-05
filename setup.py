@@ -11,6 +11,8 @@ entry_points = {
         'klab_utils.knossos.labels_to_knossos = klab_utils.knossos.labels_to_knossos:main',
         'klab_utils.knossos.offset_annotation = klab_utils.knossos.offset_annotation:main',
         'klab_utils.knossos.stack_to_wkcube = klab_utils.knossos.stack_to_wkcube:main',
+        'klab_utils.knossos.wkw_io = klab_utils.knossos.wkw_io:main',
+
 
         # trakem2 related
         'klab_utils.trakem2.preprocess_stack = klab_utils.trakem2.preprocess_stack:main',
@@ -49,6 +51,7 @@ entry_points = {
 
         # ffn 
         'klab_utils.ffn.write_h5 = klab_utils.ffn.write_h5:main',
+        'klab_utils.ffn.downsample_h5 = klab_utils.ffn.downsample_h5:main',
         'klab_utils.ffn.export_inference = klab_utils.ffn.export_inference:main',
         'klab_utils.ffn.agglomerate = klab_utils.ffn.agglomerate:main',
         'klab_utils.ffn.mpi_agglomerate = klab_utils.ffn.mpi_agglomerate:main',
