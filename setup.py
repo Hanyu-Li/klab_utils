@@ -57,6 +57,7 @@ entry_points = {
         'klab_utils.ffn.mpi_agglomerate = klab_utils.ffn.mpi_agglomerate:main',
         'klab_utils.ffn.mpi_agglomerate_v2 = klab_utils.ffn.mpi_agglomerate_v2:main',
         'klab_utils.ffn.mpi_agglomerate_h5 = klab_utils.ffn.mpi_agglomerate_h5:main',
+        'klab_utils.ffn.reconciliate = klab_utils.ffn.reconciliate:main',
     ]
 }
 install_requires = [

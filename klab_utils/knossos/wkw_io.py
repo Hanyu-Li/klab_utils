@@ -109,7 +109,7 @@ def main():
   parser.add_argument('output_dir', default=None)
   parser.add_argument('--label_dir', default=None, type=str)
   parser.add_argument('--name', default=None, type=str)
-  parser.add_argument('--scale', default='2,2,1', type=str)
+  # parser.add_argument('--scale', default='2,2,1', type=str)
   parser.add_argument('--resolution', default='6,6,40', type=str)
 
   # parser.add_argument('--datasource', default=None)
