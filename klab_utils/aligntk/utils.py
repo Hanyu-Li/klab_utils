@@ -10,17 +10,48 @@ mpi_comm = MPI.COMM_WORLD
 mpi_rank = mpi_comm.Get_rank()
 mpi_size = mpi_comm.Get_size()
 
-def mpi_process(input_dir, output_dir, process_fn, params={}):
-  '''MPI process a directory of images with a process_fn
+# def mpi_process(input_dir, output_dir, process_fn, params={}):
+#   '''MPI process a directory of images with a process_fn
+
+#   Args:
+#     input_dir: input directory containing images
+#     output_dir: output directory
+#     process_fn: A function taking (img, **params) as input arguments
+#     params: additional parameters for process_fn
+#   '''
+#   if mpi_rank == 0:
+#     f_list = glob.glob(os.path.join(input_dir, '*.*'))
+#     f_list.sort()
+#     f_sublist = np.array_split(np.asarray(f_list), mpi_size)
+#     if not os.path.exists(output_dir):
+#       os.makedirs(output_dir, exist_ok=True)
+#   else:
+#     f_sublist = None
+
+#   f_sublist = mpi_comm.scatter(f_sublist, 0)
+
+#   for f in tqdm(f_sublist):
+#     img = cv2.imread(f, 0)
+#     img_out = process_fn(img, **params)
+#     f_out = os.path.join(output_dir, os.path.basename(f))
+#     cv2.imwrite(f_out, img_out)
+
+def mpi_process(input_dir, output_dir, process_fn, params={}, tile_mode=False):
+  '''MPI process a directory of directory of tile images with a process_fn
 
   Args:
     input_dir: input directory containing images
     output_dir: output directory
     process_fn: A function taking (img, **params) as input arguments
     params: additional parameters for process_fn
+    tile_mode: If True, glob recursively for **/Tile scattered in separate 
+      folders within input_dir, else *.tif* files in input_dir
   '''
   if mpi_rank == 0:
-    f_list = glob.glob(os.path.join(input_dir, '*.*'))
+    if tile_mode:
+      f_list = glob.glob(os.path.join(input_dir, '**/Tile_*.tif*'))
+    else:
+      f_list = glob.glob(os.path.join(input_dir, '*.tif*'))
     f_list.sort()
     f_sublist = np.array_split(np.asarray(f_list), mpi_size)
     if not os.path.exists(output_dir):
@@ -35,7 +66,6 @@ def mpi_process(input_dir, output_dir, process_fn, params={}):
     img_out = process_fn(img, **params)
     f_out = os.path.join(output_dir, os.path.basename(f))
     cv2.imwrite(f_out, img_out)
-
 
 def mpi_read(input_dir):
   '''MPI read a directory of images and make a generator

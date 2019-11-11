@@ -33,7 +33,7 @@ class EM_preprocessor(object):
     self.DTYPE = 0
 
   def test_one_image(self):
-    f_dummy = glob.glob(os.path.join(self.input_dir, 'S_*/Tile*.tif'))[0]
+    f_dummy = glob.glob(os.path.join(self.input_dir, '**/Tile_*.tif'), recursive=True)[0]
     dummy_data = cv2.imread(f_dummy, flags=cv2.IMREAD_GRAYSCALE)
     print(dummy_data.shape)
     self.TILE_ROW, self.TILE_COL = dummy_data.shape
@@ -48,31 +48,25 @@ class EM_preprocessor(object):
       self.DTYPE = 1
 
   def prepare_align_txt(self):
-    # f_align_txt = os.path.join(self.output_dir, 'align.txt')
     with open(self.output, 'w') as f_out:
       for f in self.flist:
-        tlist = glob.glob(os.path.join(f, 'Tile_*.tif'))
-        if len(tlist) == 0:
-          continue
+        res = re.search(r'Tile_r([0-9])-c([0-9])_S_([0-9]+)_*', f)
+        tile_name = os.path.abspath(f)
+        r = res.group(1)
+        c = res.group(2)
+        z = int(res.group(3))
 
-        for t in tlist:
-          res = re.search(r'Tile_r([0-9])-c([0-9])_S_([0-9]+)_*', t)
-          tile_name = os.path.abspath(t)
-          r = res.group(1)
-          c = res.group(2)
-          z = int(res.group(3))
-
-          command = '{0} \t {1} \t {2} \t {3} \t {4} \t {5} \t {6} \t {7} \t {8} \n'.format(
-              tile_name, c, r, z, self.TILE_COL, self.TILE_ROW, self.TILE_MIN, self.TILE_MAX, self.DTYPE)
-          f_out.write(command)
+        command = '{0} \t {1} \t {2} \t {3} \t {4} \t {5} \t {6} \t {7} \t {8} \n'.format(
+            tile_name, c, r, z, self.TILE_COL, self.TILE_ROW, self.TILE_MIN, self.TILE_MAX, self.DTYPE)
+        f_out.write(command)
 
   def run(self):
     print("Input:", self.input_dir)
     print("Output:", self.output)
 
-    self.flist = glob.glob(os.path.join(self.input_dir, 'S_*'))
+    self.flist = glob.glob(os.path.join(self.input_dir, '**/Tile_*.tif*'), recursive=True)
     def get_index(f): return re.search(
-        r'([0-9]+)', os.path.basename(f)).group(1)
+        r'S_([0-9]+)_', os.path.basename(f)).group(1)
 
     self.flist.sort(key=get_index)
 

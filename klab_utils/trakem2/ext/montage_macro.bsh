@@ -22,6 +22,9 @@ import ini.trakem2.io.ImageSaver;
 import ini.trakem2.persistence.Loader;
 import java.awt.Rectangle;
 
+import ini.trakem2.imaging.ContrastEnhancerWrapper;
+
+
 runtime = Runtime.getRuntime();
 System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
 
@@ -29,7 +32,7 @@ file = System.getProperty("input");
 dir = System.getProperty("output");
 minOctave = Integer.parseInt(System.getProperty("min"));
 maxOctave = Integer.parseInt(System.getProperty("max"));
-
+contrastEnhance = Boolean.parseBoolean(System.getProperty("contrast"));
 /* create output folder */
 f_dir = new File(dir);
 if ( !f_dir.exists())
@@ -69,9 +72,26 @@ if (l0.getDisplayables(Patch.class).size() == 0)
 /* save the project */
 	// project.saveAs(dir + "/project.xml", false);
 
-
 /* prepare montage */
 layerRange = layerset.getLayers();
+
+
+/* contrast adjust */
+if (contrastEnhance == true)
+{
+  final ContrastEnhancerWrapper cew = new ContrastEnhancerWrapper();
+  cew.set(
+    saturated=0.4,
+    normalize=true,
+    equalize=true,
+    stats_mode=0,
+    use_full_stack=false,
+    from_existing_min_and_max=false,
+    visible_only=true
+  );
+  cew.applyLayerWise(layerRange);
+  cew.shutdown();
+}
 
 tilesAreInPlace = true;
 largestGraphOnly = false;
@@ -93,15 +113,6 @@ f_output = new File(output_path);
 if ( !f_output.exists())
 	f_output.mkdirs();
 
-//AlignTask.montageLayers(
-//	p,
-//	layerRange,
-//	tilesAreInPlace,
-//	largestGraphOnly,
-//	hideDisconnectedTiles,
-//	deleteDisconnectedTiles,
-//	sloppyOverlapTest
-//);
 
 for (Layer layer: layerRange)
 {

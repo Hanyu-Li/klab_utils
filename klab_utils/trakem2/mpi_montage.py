@@ -39,6 +39,7 @@ def main():
   parser.add_argument('output', default=None, type=str)
   parser.add_argument('--min', default=1024, type=int)
   parser.add_argument('--max', default=2048, type=int)
+  parser.add_argument('--contrast', default=True, type=bool)
   parser.add_argument('--fiji', default='fiji', type=str, help='specify ImageJ-linux64 executable path')
   args = parser.parse_args()
 
@@ -53,9 +54,10 @@ def main():
     bsh_path = None
   bsh_path = mpi_comm.bcast(bsh_path, 0)
 
+  contrast = 'true' if args.contrast else 'false'
   rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = '%s --headless -Dinput=%s -Doutput=%s -Dmin=%d -Dmax=%d -- --no-splash %s' % (
-    args.fiji,rank_input, args.output, args.min, args.max, bsh_path)
+  command = '%s --headless -Dinput=%s -Doutput=%s -Dmin=%d -Dmax=%d -Dcontrast=%s -- --no-splash %s' % (
+    args.fiji,rank_input, args.output, args.min, args.max, contrast, bsh_path)
   print(command)
   os.system(command)
 

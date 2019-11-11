@@ -14,9 +14,11 @@ def main():
   parser.add_argument('input', default=None, type=str)
   parser.add_argument('output', default=None, type=str)
   parser.add_argument('--factor', default=2, type=int)
+  parser.add_argument('--tile_mode', default=False, type=bool)
   args = parser.parse_args()
 
-  mpi_process(args.input, args.output, reduce_size,  dict(factor=args.factor))
+  mpi_process(args.input, args.output, reduce_size,  dict(factor=args.factor), tile_mode=args.tile_mode)
+
 
 
 if __name__ == '__main__':
