@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--input_dir', default=None, type=str)
-  parser.add_argument('--output_dir', default=None, type=str)
+  parser.add_argument('input_dir', default=None, type=str)
+  parser.add_argument('output_dir', default=None, type=str)
   args = parser.parse_args()
   os.makedirs(args.output_dir, exist_ok=True)
   # is os.path.exists(args.output_dir):

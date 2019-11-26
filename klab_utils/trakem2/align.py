@@ -19,6 +19,7 @@ def main():
   parser.add_argument('--min', default=1024, type=int)
   parser.add_argument('--max', default=2048, type=int)
   parser.add_argument('--begin', default=0, type=int)
+  parser.add_argument('--elastic', default=True, type=bool)
   parser.add_argument('--fiji', default='fiji', type=str, help='specify ImageJ-linux64 executable path')
   args = parser.parse_args()
 
@@ -30,12 +31,15 @@ def main():
 
   #rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
 
+  elastic = 'true' if args.elastic else 'false'
+
   if args.pairs:
-    command = '%s --headless -Dinput=%s -Doutput=%s -Dpairs=%s -Dmin=%d -Dmax=%d -Dbegin=%d -- --no-splash %s' % (
-        args.fiji, args.input, args.output, args.pairs, args.min, args.max, args.begin, bsh_path)
+
+    command = '%s --headless -Dinput=%s -Doutput=%s -Dpairs=%s -Dmin=%d -Dmax=%d  -Dbegin=%d -Delastic=%s -- --no-splash %s' % (
+        args.fiji, args.input, args.output, args.pairs, args.min, args.max, args.begin, elastic, bsh_path)
   else:
-    command = '%s --headless -Dinput=%s -Doutput=%s -Dmin=%d -Dmax=%d -Dbegin=%d -- --no-splash %s' % (
-        args.fiji, args.input, args.output, args.min, args.max, args.begin, bsh_path)
+    command = '%s --headless -Dinput=%s -Doutput=%s -Dmin=%d -Dmax=%d -Dbegin=%d -Delastic=%s -- --no-splash %s' % (
+        args.fiji, args.input, args.output, args.min, args.max, args.begin, elastic, bsh_path)
   print(command)
   os.system(command)
 

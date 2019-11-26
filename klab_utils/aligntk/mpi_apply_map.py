@@ -6,6 +6,7 @@ import numpy as np
 import argparse
 import re
 from tqdm import tqdm
+import skimage
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
 mpi_rank = mpi_comm.Get_rank()
@@ -122,8 +123,10 @@ def get_global_region(amap_dir, sub_range):
     omaxX = max(maxX, omaxX)
     ominY = min(minY, ominY)
     omaxY = max(maxY, omaxY)
-  w = omaxX - ominX + 1
-  h = omaxY - ominY + 1
+  # w = omaxX - ominX + 1
+  # h = omaxY - ominY + 1
+  w = omaxX - ominX
+  h = omaxY - ominY
   command = '%dx%d%+d%+d' % (w, h, ominX, ominY)
   return command
 
@@ -195,6 +198,9 @@ def main():
   # group = parser.add_mutually_exclusive_group()
   parser.add_argument('--fix_first', action='store_true')
   parser.add_argument('--fix_last', action='store_true')
+  parser.add_argument('--force_range', default=True, type=bool)
+  parser.add_argument('--map_scale', default=1, type=int)
+
 
   args = parser.parse_args()
   if mpi_rank == 0:
@@ -207,12 +213,21 @@ def main():
     write_tmp_image_lst(args.image_lst, mpi_size, sub_range, tmp_dir)
     
     assert not args.fix_first or not args.fix_last
-    if args.fix_first:
+    if args.force_range:
+      im_list = sorted(glob.glob(os.path.join(args.image_dir, '*.tif')))
+      print(im_list)
+      sample_im = skimage.io.imread(im_list[0])
+      w, h = sample_im.shape
+      region = '%dx%d%+d%+d' % (h, w, 0, 0)
+
+    elif args.fix_first:
       region = get_global_region(os.path.join(args.input, 'amaps'), [sub_range[0], sub_range[0]])
     elif args.fix_last:
       region = get_global_region(os.path.join(args.input, 'amaps'), [sub_range[-1], sub_range[-1]])
     else:
       region = get_global_region(os.path.join(args.input, 'amaps'), sub_range)
+
+    
 
 
 
@@ -228,11 +243,11 @@ def main():
   tmp_dir = mpi_comm.bcast(tmp_dir, 0)
   region = mpi_comm.bcast(region, 0)
   if args.mask_dir:
-    command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -masks %s -region %s -memory 500000' \
-    % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, args.mask_dir, region )
+    command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -masks %s -region %s -map_scale %d -memory 500000' \
+    % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, args.mask_dir, region, args.map_scale)
   else:
-    command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -region %s -memory 500000' \
-    % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, region )
+    command = 'apply_map -image_list %s/images%d.lst -images %s -maps %s/amaps/ -output %s/aligned/ -region %s -map_scale %d -memory 500000' \
+    % (tmp_dir, mpi_rank, args.image_dir, args.input, args.input, region, args.map_scale)
 
   print(command)
   os.system(command)

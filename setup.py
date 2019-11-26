@@ -48,6 +48,8 @@ entry_points = {
         'klab_utils.aligntk.clahe = klab_utils.aligntk.clahe:main',
         'klab_utils.aligntk.mpi_apply_map = klab_utils.aligntk.mpi_apply_map:main',
         'klab_utils.aligntk.fix_defects = klab_utils.aligntk.fix_defects:main',
+        'klab_utils.aligntk.h5_to_stack = klab_utils.aligntk.h5_to_stack:main',
+        'klab_utils.aligntk.correct_artifact = klab_utils.aligntk.correct_artifact:main',
 
         # ffn 
         'klab_utils.ffn.write_h5 = klab_utils.ffn.write_h5:main',

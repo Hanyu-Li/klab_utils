@@ -39,6 +39,7 @@ f_pairs = System.getProperty("pairs");
 minOctave = Integer.parseInt(System.getProperty("min"));
 maxOctave = Integer.parseInt(System.getProperty("max"));
 beginning = Integer.parseInt(System.getProperty("begin"));
+elastic = Boolean.parseBoolean(System.getProperty("elastic"));
 System.out.println(f_pairs);
 pairs = null;
 if (f_pairs == null)
@@ -234,6 +235,26 @@ if (pairs == null)
       true,
       filter);
   layerset.setMinimumDimensions();
+  if (elastic == true){
+    System.out.println("Elastic_align");
+    new ElasticLayerAlignment().exec(
+      paramElastic,
+      project,
+      dynLayerRange,
+      fixLayerRange,
+      emptyLayerRange,
+      layerset.get2DBounds(),
+      false,
+      true,
+      filter);
+    // futures = new ArrayList();
+    // for (p : layerset.getDisplayables(Patch.class))
+    //   futures.add(p.updateMipMaps());
+    // for (f : futures)
+    //   f.get();
+    layerset.setMinimumDimensions();
+  }
+
 
 }
 else
@@ -288,22 +309,25 @@ else
         filter);
     layerset.setMinimumDimensions();
 
-    // new ElasticLayerAlignment().exec(
-    //   paramElastic,
-    //   project,
-    //   dynLayerRange,
-    //   fixLayerRange,
-    //   emptyLayerRange,
-    //   layerset.get2DBounds(),
-    //   false,
-    //   true,
-    //   filter);
-    // futures = new ArrayList();
-    // for (p : layerset.getDisplayables(Patch.class))
-    //   futures.add(p.updateMipMaps());
-    // for (f : futures)
-    //   f.get();
-    // layerset.setMinimumDimensions();
+    if (elastic == true){
+      System.out.println("Elastic_align");
+      new ElasticLayerAlignment().exec(
+        paramElastic,
+        project,
+        dynLayerRange,
+        fixLayerRange,
+        emptyLayerRange,
+        layerset.get2DBounds(),
+        false,
+        true,
+        filter);
+      // futures = new ArrayList();
+      // for (p : layerset.getDisplayables(Patch.class))
+      //   futures.add(p.updateMipMaps());
+      // for (f : futures)
+      //   f.get();
+      layerset.setMinimumDimensions();
+    }
   }
 }
 
