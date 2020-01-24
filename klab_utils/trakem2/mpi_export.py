@@ -38,9 +38,10 @@ def get_keys(align_txt):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('input', default=None, type=str)
-  parser.add_argument('output', default=None, type=str)
+  parser.add_argument('output', default=None, type=str, help='A directory containing a project.xml file')
+  parser.add_argument('--input', default=None, type=str)
   parser.add_argument('--range', default=None, type=str)
+  parser.add_argument('--heap_size', default=6, type=int)
   parser.add_argument('--fiji', default='fiji', type=str, help='specify ImageJ-linux64 executable path')
   args = parser.parse_args()
 
@@ -55,15 +56,18 @@ def main():
     logging.warning('macro: %s', bsh_path)
     # tmp_dir = os.path.join(args.output, 'tmp')
     # split_aligntxt(args.input, tmp_dir)
-    if not args.range:
+    if not args.range and args.input:
       key_sublist = get_keys(args.input)
     else:
       sub_range = [int(i) for i in args.range.split(',')]
       keys = np.asarray(range(sub_range[0], sub_range[1]))
       key_sublist = np.array_split(keys, mpi_size)
-    begin = get_keys(args.input)[0][0]
+
+    if args.input:
+      begin = get_keys(args.input)[0][0]
+    else:
+      begin = 0
   else:
-    pass
     key_sublist = None
     bsh_path = None
     begin = None
@@ -73,8 +77,8 @@ def main():
 
   print(key_sublist)
   #rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = '%s -Xms6g -Xmx6g --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -- --no-splash %s' % (
-    args.fiji, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin,
+  command = '%s -Xms%dg -Xmx%dg --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -- --no-splash %s' % (
+    args.fiji, args.heap_size, args.heap_size, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin,
     bsh_path)
   print(command)
   os.system(command)

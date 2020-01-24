@@ -65,9 +65,15 @@ System.out.println(layerset);
 //layerset.setMinimumDimensions();
 
 patches = layerset.getLayer(0).getPatches(true);
-// roi = layerset.get2DBounds();
 System.out.println(patches);
-roi = patches.get(0).getBoundingBox();
+
+// roi = layerset.get2DBounds();
+patch_num = patches.size();
+Rectangle roi = patches.get(0).getBoundingBox();
+for (i = 1; i<patch_num; i++)
+{
+  roi = roi.union(patches.get(i).getBoundingBox());
+}
 
 System.out.println(roi);
 System.out.println(r0);

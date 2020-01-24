@@ -66,7 +66,7 @@ def load_inference(input_dir):
   zyx = get_zyx(f[0])
   seg, _ = storage.load_segmentation(input_dir, zyx)
   return seg, np.array(zyx)
-def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices, post_clean_up=False):
+def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices, post_clean_up=False, verbose=False):
   if not sub_indices.size:
     return {}
   get_name = lambda s: re.sub('seg-', 'precomputed-', s)
@@ -74,7 +74,10 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices, post
   seg_list.sort()
   
   seg_map = dict()
-  pbar = tqdm(sub_indices, desc='Generating seg map')
+  if verbose:
+    pbar = tqdm(sub_indices, desc='Generating seg map')
+  else:
+    pbar = sub_indices
   for i in pbar:
     seg_path = seg_list[i]
     if not len(glob.glob(os.path.join(seg_path, '**/*.npz'), recursive=True)):
@@ -112,7 +115,7 @@ def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, 
     bounded=True, fill_missing=False, autocrop=False,
     cache=False, compress_cache=None, cdn_cache=False,
     progress=False, provenance=None, compress=True, 
-    non_aligned_writes=True, parallel=True)
+    non_aligned_writes=True, parallel=False)
   info = CloudVolume.create_new_info(
     num_channels=1,
     layer_type='segmentation',
@@ -130,8 +133,11 @@ def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, 
   cv.commit_info()
   return cv
 
-def update_ids_and_write(seg_map, sub_indices):
-  pbar = tqdm(sub_indices, desc='Update ids to be globally unique')
+def update_ids_and_write(seg_map, sub_indices, verbose=False):
+  if verbose:
+    pbar = tqdm(sub_indices, desc='Update ids to be globally unique')
+  else:
+    pbar = sub_indices
   for k in pbar:
     s = seg_map[k]['input']
     seg, offset_zyx = load_inference(s)
@@ -156,6 +162,7 @@ def update_ids_and_write(seg_map, sub_indices):
     chunk_size = seg_map[k]['chunk_size']
     cv = prepare_precomputed(precomputed_path, offset_xyz, size_xyz, resolution, chunk_size)
     cv[bbox] = seg
+    logging.warning('finished cv writing %d', k)
 
 def main():
   parser = argparse.ArgumentParser()
@@ -167,11 +174,13 @@ def main():
   parser.add_argument('--chunk_size', type=str, default='256,256,64')
   parser.add_argument('--relabel', type=bool, default=True)
   parser.add_argument('--post_clean_up', type=bool, default=False)
+  parser.add_argument('--verbose', type=bool, default=True)
   args = parser.parse_args()
   resolution = [int(i) for i in args.resolution.split(',')]
   chunk_size = [int(i) for i in args.chunk_size.split(',')]
 
-  config_path = os.path.join(args.output, 'stage_0/config.pkl')
+  config_path = os.path.join(args.output, 'config.pkl')
+  remapped_path = os.path.join(args.output, 'remapped')
 
   # step 1: MPI read and get local_max
   if mpi_rank == 0:
@@ -182,10 +191,8 @@ def main():
   else:
     sub_indices = None
 
-  # stage_0_output = os.path.join(args.output, 'stage_0')
   sub_indices = mpi_comm.scatter(sub_indices, 0)
-  # seg_map = get_seg_map(args.input, stage_0_output, resolution, chunk_size, sub_indices, args.post_clean_up)
-  seg_map = get_seg_map(args.input, args.output, resolution, chunk_size, sub_indices, args.post_clean_up)
+  seg_map = get_seg_map(args.input, remapped_path, resolution, chunk_size, sub_indices, args.post_clean_up, args.verbose)
 
   mergeOp = MPI.Op.Create(merge_dict, commute=True)
   seg_map = mpi_comm.allreduce(seg_map, op=mergeOp)
@@ -194,17 +201,13 @@ def main():
   mpi_comm.barrier()
   if mpi_rank == 0:
     unify_ids(seg_map)
-    #pprint(seg_map)
   else:
     seg_map = None
   seg_map = mpi_comm.bcast(seg_map, 0)
-  update_ids_and_write(seg_map, sub_indices)
+  update_ids_and_write(seg_map, sub_indices, args.verbose)
 
   if mpi_rank == 0:
-    # stage_out_dir = os.path.join(args.output, 'stage_0')
-    # os.makedirs(stage_out_dir, exist_ok=True)
-    # with open(os.path.join(stage_out_dir, 'config.pkl'), 'wb') as fp:
-    with open(os.path.join(args.output, 'config.pkl'), 'wb') as fp:
+    with open(config_path, 'wb') as fp:
       pickle.dump(seg_map, fp)
 
 

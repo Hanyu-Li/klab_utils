@@ -11,10 +11,17 @@ mpi_size = mpi_comm.Get_size()
 
 def gen_mask(img, l_thresh, h_thresh, kernel_size, iterations, var_size, var_thresh):
   kernel = np.ones((kernel_size,kernel_size),np.uint8)
-  mask = 255*(np.logical_or(img < l_thresh,img > h_thresh)).astype(np.uint8)
+  # mask = 255*(np.logical_or(img < l_thresh,img > h_thresh)).astype(np.uint8)
+  # mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+  # # mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+  # mask = cv2.dilate(mask,kernel,iterations = iterations)
+
+  # kernel = np.ones((kernel_size,kernel_size),np.uint8)
+  blur_img = cv2.blur(np.float32(img), (kernel_size, kernel_size))
+  mask = 255*(np.logical_or(blur_img < l_thresh,blur_img > h_thresh)).astype(np.uint8)
   mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-  # mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-  mask = cv2.dilate(mask,kernel,iterations = iterations)
+
+
 
   if var_size is not None and var_thresh is not None:
     blur_img = cv2.blur(np.float32(img), (var_size, var_size))
@@ -35,6 +42,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('image_dir', default=None, type=str)
   parser.add_argument('mask_dir', default='masks', type=str)
+  parser.add_argument('--output_dir', default='output', type=str)
   parser.add_argument('--low', default=5, type=int)
   parser.add_argument('--high', default=250, type=int)
   parser.add_argument('--kernel', default=10, type=int)
@@ -47,6 +55,7 @@ def main():
 
   if mpi_rank == 0:
     os.makedirs(args.mask_dir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
     f_list = glob.glob(os.path.join(args.image_dir, '*.*'))
     f_list.sort()
     f_sublist = np.array_split(np.asarray(f_list), mpi_size)
@@ -66,7 +75,10 @@ def main():
       fd.write(np.packbits(mask[:row,:col], axis=-1).tobytes())
     if args.mask_image:
       img[mask<=0] = 0
-      cv2.imwrite(f, img)
+      f_out = os.path.join(
+        args.output_dir, 
+        os.path.basename(f))
+      cv2.imwrite(f_out, img)
 
 
 if __name__ == '__main__':
