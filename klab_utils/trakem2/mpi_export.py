@@ -41,6 +41,7 @@ def main():
   parser.add_argument('output', default=None, type=str, help='A directory containing a project.xml file')
   parser.add_argument('--input', default=None, type=str)
   parser.add_argument('--range', default=None, type=str)
+  parser.add_argument('--bbox', default='0,0,0,0', type=str)
   parser.add_argument('--heap_size', default=6, type=int)
   parser.add_argument('--fiji', default='fiji', type=str, help='specify ImageJ-linux64 executable path')
   args = parser.parse_args()
@@ -67,6 +68,9 @@ def main():
       begin = get_keys(args.input)[0][0]
     else:
       begin = 0
+
+    # if args.bbox:
+    #   bbox = [int(i) for i in args.bbox.split(',')]
   else:
     key_sublist = None
     bsh_path = None
@@ -77,8 +81,8 @@ def main():
 
   print(key_sublist)
   #rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = '%s -Xms%dg -Xmx%dg --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -- --no-splash %s' % (
-    args.fiji, args.heap_size, args.heap_size, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin,
+  command = '%s -Xms%dg -Xmx%dg --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -Dbbox=%s -- --no-splash %s' % (
+    args.fiji, args.heap_size, args.heap_size, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin, args.bbox,
     bsh_path)
   print(command)
   os.system(command)

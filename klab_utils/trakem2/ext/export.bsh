@@ -30,6 +30,7 @@ import java.io.FileReader;
 import java.util.StringTokenizer;
 
 
+
 runtime = Runtime.getRuntime();
 System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
 
@@ -39,11 +40,23 @@ range = System.getProperty("range");
 begin = System.getProperty("begin");
 begin = Integer.parseInt(begin);
 
+bbox = System.getProperty("bbox");
+
 String output_path = dir + "/output";
 
 StringTokenizer st = new StringTokenizer(range, ",");
 r0 = Integer.parseInt(st.nextToken());
 r1 = Integer.parseInt(st.nextToken());
+
+StringTokenizer st_2 = new StringTokenizer(bbox, ",");
+x = Integer.parseInt(st_2.nextToken());
+y = Integer.parseInt(st_2.nextToken());
+w = Integer.parseInt(st_2.nextToken());
+h = Integer.parseInt(st_2.nextToken());
+Rectangle force_bbox = new Rectangle(x, y, w, h);
+// System.out.println(String.format("Forced bbox %s", force_bbox));
+System.out.println(force_bbox);
+
 
 ControlWindow.setGUIEnabled(false);
 // project = Project.newFSProject("blank", null, dir, false);
@@ -68,11 +81,19 @@ patches = layerset.getLayer(0).getPatches(true);
 System.out.println(patches);
 
 // roi = layerset.get2DBounds();
-patch_num = patches.size();
-Rectangle roi = patches.get(0).getBoundingBox();
-for (i = 1; i<patch_num; i++)
+
+// --- If force_bbox is invalid, use that of first slice ---
+Rectangle roi = null;
+if (w == 0 && h == 0)
 {
-  roi = roi.union(patches.get(i).getBoundingBox());
+  patch_num = patches.size();
+  roi = patches.get(0).getBoundingBox();
+  for (i = 1; i<patch_num; i++)
+  {
+    roi = roi.union(patches.get(i).getBoundingBox());
+  }
+} else {
+  roi = force_bbox;
 }
 
 System.out.println(roi);
@@ -104,6 +125,7 @@ for (i = r0; i<=r1; i++)
   System.out.println(output_str);
   // new Saver(".tif").save(flat, output_str);
   saver.save(flat, output_str);
+  flat = null;
 }
 /* save the project */
 // project.saveAs(dir + "/project1.xml", true);
