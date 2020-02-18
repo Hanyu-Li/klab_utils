@@ -42,7 +42,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('image_dir', default=None, type=str)
   parser.add_argument('mask_dir', default='masks', type=str)
-  parser.add_argument('--output_dir', default='output', type=str)
+  parser.add_argument('--output_dir', default=None, type=str)
   parser.add_argument('--low', default=5, type=int)
   parser.add_argument('--high', default=250, type=int)
   parser.add_argument('--kernel', default=10, type=int)
@@ -55,7 +55,8 @@ def main():
 
   if mpi_rank == 0:
     os.makedirs(args.mask_dir, exist_ok=True)
-    os.makedirs(args.output_dir, exist_ok=True)
+    if args.output_dir:
+      os.makedirs(args.output_dir, exist_ok=True)
     f_list = glob.glob(os.path.join(args.image_dir, '*.*'))
     f_list.sort()
     f_sublist = np.array_split(np.asarray(f_list), mpi_size)

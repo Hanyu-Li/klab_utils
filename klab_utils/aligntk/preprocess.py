@@ -10,17 +10,15 @@ def preprocess_parse():
   parser.add_argument('image_dir', default=None, type=str)
   parser.add_argument('output_dir', default=None, type=str)
   parser.add_argument('--n_groups', default=12, type=int)
+  parser.add_argument('--only_continuous_pairs', default=False, type=bool)
   args = parser.parse_args()
-  image_dir = args.image_dir
-  output_dir = args.output_dir
-  n_groups = args.n_groups
-  return image_dir, output_dir, n_groups
+  return args.image_dir, args.output_dir, args.n_groups, args.only_continuous_pairs
 
 def get_index(filename):
   """Get index of a **/*.tif filename"""
   return int(re.search(r'(^\d)*(\d+).*', filename).group(2))
 
-def preprocess_main(image_dir, output_dir, n_groups):
+def preprocess_main(image_dir, output_dir, n_groups, only_continuous_pairs):
   # Write complete set
   os.makedirs(output_dir, exist_ok=True)
   f_images = os.path.join(output_dir, 'images.lst')
@@ -40,11 +38,19 @@ def preprocess_main(image_dir, output_dir, n_groups):
     for i in range(len(image_list)-1):
       curr_idx = get_index(image_list[i])
       next_idx = get_index(image_list[i+1])
-      if next_idx - curr_idx == 1:
-        line = image_list[i] + ' ' + image_list[i+1] + ' ' + \
-          image_list[i] + '_' + image_list[i+1]
-        pairs_dict[(curr_idx, next_idx)] = line
-        f2.write(line + '\n')
+      # pairs don't have to be continous
+      if only_continuous_pairs:
+        if next_idx - curr_idx == 1:
+          line = image_list[i] + ' ' + image_list[i+1] + ' ' + \
+            image_list[i] + '_' + image_list[i+1]
+          pairs_dict[(curr_idx, next_idx)] = line
+          f2.write(line + '\n')
+      else:
+          line = image_list[i] + ' ' + image_list[i+1] + ' ' + \
+            image_list[i] + '_' + image_list[i+1]
+          pairs_dict[(curr_idx, next_idx)] = line
+          f2.write(line + '\n')
+
 
   # Write individual groups
   n_pairs = len(image_list) - 1
@@ -64,9 +70,8 @@ def preprocess_main(image_dir, output_dir, n_groups):
   
 
 def main():
-  image_dir, output_dir, group_size = preprocess_parse()
-  
-  preprocess_main(image_dir, output_dir, group_size)
+  image_dir, output_dir, group_size, only_continuous_pairs = preprocess_parse()
+  preprocess_main(image_dir, output_dir, group_size, only_continuous_pairs)
     
 
 
