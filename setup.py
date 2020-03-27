@@ -12,6 +12,8 @@ entry_points = {
         'klab_utils.knossos.offset_annotation = klab_utils.knossos.offset_annotation:main',
         'klab_utils.knossos.stack_to_wkcube = klab_utils.knossos.stack_to_wkcube:main',
         'klab_utils.knossos.wkw_io = klab_utils.knossos.wkw_io:main',
+        'klab_utils.knossos.cube_wkw = klab_utils.knossos.cube_wkw:main',
+        'klab_utils.knossos.wkw_to_h5 = klab_utils.knossos.wkw_to_h5:main',
 
 
         # trakem2 related
