@@ -28,7 +28,6 @@ entry_points = {
         # neuroglancer related
         'klab_utils.neuroglancer.neuroglance_precomputed = klab_utils.neuroglancer.neuroglance_precomputed:main',
         'klab_utils.neuroglancer.raw_to_precomputed = klab_utils.neuroglancer.raw_to_precomputed:main',
-        'klab_utils.neuroglancer.raw_to_precomputed_v2 = klab_utils.neuroglancer.raw_to_precomputed_v2:main',
         'klab_utils.neuroglancer.mesh_generator = klab_utils.neuroglancer.mesh_generator:main',
         'klab_utils.neuroglancer.mesh_generator_v2 = klab_utils.neuroglancer.mesh_generator_v2:main',
         'klab_utils.neuroglancer.mesh_generator_v3 = klab_utils.neuroglancer.mesh_generator_v3:main',
