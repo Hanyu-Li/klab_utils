@@ -30,11 +30,11 @@ def read_vol(image_dir, axes='zyx', n_image=None):
     ranges = np.arange(n_image)
 
   if axes == 'zyx':
-    vol = np.stack([np.squeeze(io.imread(f)) for f in f_list[ranges]], 0)
+    vol = np.stack([np.squeeze(imread(f)) for f in f_list[ranges]], 0)
   elif axes == 'yxz':
-    vol = np.stack([np.squeeze(io.imread(f)) for f in f_list[ranges]], -1)
+    vol = np.stack([np.squeeze(imread(f)) for f in f_list[ranges]], -1)
   elif axes == 'xyz':
-    vol = np.stack([np.squeeze(io.imread(f)) for f in f_list[ranges]], 0)
+    vol = np.stack([np.squeeze(imread(f)) for f in f_list[ranges]], 0)
     vol = np.transpose(vol, [2, 1, 0])
 
   return vol
@@ -99,7 +99,7 @@ def main():
   else:
     name = args.name
 
-  create_wkcube(name, args.image_dir, args.output_dir, args.max_mag, args.resolution)
+  #create_wkcube(name, args.image_dir, args.output_dir, args.max_mag, args.resolution)
   if args.label_dir:
     upload_segmentation(args.label_dir, args.output_dir, axes='zyx')
   

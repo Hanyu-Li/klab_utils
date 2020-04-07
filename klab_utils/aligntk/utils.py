@@ -6,6 +6,7 @@ import glob
 from PIL import Image
 from tqdm import tqdm
 from mpi4py import MPI
+from skimage.io import imread, imsave
 mpi_comm = MPI.COMM_WORLD
 mpi_rank = mpi_comm.Get_rank()
 mpi_size = mpi_comm.Get_size()
@@ -62,7 +63,8 @@ def mpi_process(input_dir, output_dir, process_fn, params={}, tile_mode=False):
   f_sublist = mpi_comm.scatter(f_sublist, 0)
 
   for f in tqdm(f_sublist):
-    img = cv2.imread(f, 0)
+    # img = cv2.imread(f, 0)
+    img = imread(f)
     img_out = process_fn(img, **params)
     f_out = os.path.join(output_dir, os.path.basename(f))
     cv2.imwrite(f_out, img_out)
@@ -83,14 +85,16 @@ def mpi_read(input_dir):
   f_sublist = mpi_comm.scatter(f_sublist, 0)
 
   for f in tqdm(f_sublist):
-    img = cv2.imread(f, 0)
+    # img = cv2.imread(f, 0)
+    img = imread(f)
     # yield (basename, image) tuple with basename as key
     yield (os.path.basename(f), img)
 
 def mpi_write(image_generator, output_dir):
   for (name, image) in image_generator:
     f_out = os.path.join(output_dir, name)
-    cv2.imwrite(f_out, image)
+    # cv2.imwrite(f_out, image)
+    imsave(f_out, image, check_contrast=False)
 
 def mpi_map(image_generator, process_fn, params={}):
   '''MPI process a directory of images with a process_fn
