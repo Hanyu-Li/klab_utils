@@ -59,7 +59,7 @@ def main():
                       help="path to precomputed labels")
   parser.add_argument('--verbose', default=False,
                       help="wether to use progressbar")
-  parser.add_argument('--dim_size', default='64,64,64',
+  parser.add_argument('--dim_size', default='448,448,448',
                       help="mesh chunksize")
   # parser.add_argument('--simplification_factor', default=10, type=int,
   #                     help="simplification_factor")
@@ -76,13 +76,14 @@ def main():
 
     print("Making meshes...")
     mtq = mpiTaskQueue()
-    tc.create_meshing_tasks(task_queue=mtq,
-                            layer_path=in_path,
+    tasks = tc.create_meshing_tasks(layer_path=in_path,
                             mip=mip,
                             shape=Vec(*dim_size),
-                            # simplification_factor=args.simplification_factor,
-                            max_simplification_error=args.max_simplification_error,
-                            mesh_dir='mesh')
+                            mesh_dir='mesh',
+                            progress=args.verbose)
+    #mtq.insert_all(tasks)
+    for t in tasks:
+      mtq.insert(t)
 
     L = len(mtq._queue)
     all_range = np.arange(L)
@@ -95,31 +96,6 @@ def main():
   mtq = comm.bcast(mtq, root=0)
   mtq.run(sub_ranges[rank], args.verbose)
   comm.barrier()
-  if rank == 0:
-    mtq.clean(all_range)
-    print("Cleaned", len(mtq._queue))
-    print("Updating metadata...")
-    mtq2 = mpiTaskQueue()
-    tc.create_mesh_manifest_tasks(mtq2, in_path, magnitude=4)
-    L2 = len(mtq2._queue)
-    print(len(mtq2._queue))
-    all_range = np.arange(L2)
-    sub_ranges = np.array_split(all_range, size)
-  else:
-    sub_ranges = None
-    mtq2 = None
-
-  sub_ranges = comm.bcast(sub_ranges, root=0)
-  mtq2 = comm.bcast(mtq2, root=0)
-  mtq2.run(sub_ranges[rank], args.verbose)
-  # mtq.run(sub_ranges[rank])
-  comm.barrier()
-  if rank == 0:
-    command = r'gunzip {}/mesh/*.gz'.format(args.labels)
-    print(command)
-    subprocess.call(command, shell=True)
-    print("Done!")
-
 
 if __name__ == '__main__':
   main()
