@@ -66,7 +66,7 @@ def create_wkcube(fname, stack_path, wk_path, max_mag, scale, wkcuber=None):
   cmd = ''
   if wkcuber:
     cmd = cmd + r'cd %s ; ' % wkcuber 
-  cmd = cmd + r'python -m wkcuber --jobs %d --batch_size 32 --layer_name color --max_mag %d --scale %s --name %s --no_compress %s %s' % (
+  cmd = cmd + r'python -m wkcuber --jobs %d --batch_size 1 --layer_name color --max_mag %d --scale %s --name %s --no_compress %s %s' % (
       multiprocessing.cpu_count(),
       max_mag,
       scale,

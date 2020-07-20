@@ -49,6 +49,30 @@ def build_segid_map(layer_path):
     return segids, _info['mesh']
 
 
+def parallel_build_segid_map(layer_path):
+  with Storage(layer_path) as storage:
+    _info = json.loads(storage.get_file('info').decode('utf8'))
+    mesh_dir = os.path.join(layer_path.replace('file://', ''), _info['mesh'])
+    # if mesh_dir is None and 'mesh' in self._info:
+      # self.mesh_dir = self._info['mesh']
+    print(mesh_dir)
+    segids = defaultdict(list)
+
+    # pbar = tqmd()
+    for entry in tqdm(os.scandir(mesh_dir)):
+      # print(entry.name)
+      pass
+      # match = re.match(r'(\d+):(\d+).*.gz', entry.name)
+      # if not match: 
+      #   continue
+      # fname, segid, lod = match.group(0), int(match.group(1)), int(match.group(2))
+      # segids[segid].append(fname)
+
+    
+    
+    # return segids, _info['mesh']
+    return None, None
+
 
   # assert int(magnitude) == magnitude
   # start = 10 ** (magnitude - 1)
@@ -94,6 +118,8 @@ class FastMeshManifestTask(object):
             content=json.dumps({"fragments": frags}),
             content_type='application/json',
         )
+        a = 1
+
     # with Storage(self.layer_path) as storage:
     #   self._info = json.loads(storage.get_file('info').decode('utf8'))
     #   if self.mesh_dir is None and 'mesh' in self._info:

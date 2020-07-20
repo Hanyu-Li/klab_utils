@@ -57,28 +57,33 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--labels', default=None,
                       help="path to precomputed labels")
-  parser.add_argument('--verbose', default=False,
-                      help="wether to use progressbar")
+  parser.add_argument('--mip', default=0, type=int,
+                      help="mip level")
   parser.add_argument('--dim_size', default='448,448,448',
                       help="mesh chunksize")
   # parser.add_argument('--simplification_factor', default=10, type=int,
   #                     help="simplification_factor")
   parser.add_argument('--max_simplification_error', default=40, type=int,
                       help="max_simplification_error")
+  parser.add_argument('--dust_threshold', default=100, type=int,
+                      help="dust threhold")
+  parser.add_argument('--verbose', default=True,
+                      help="wether to use progressbar")
 
   args = parser.parse_args()
 
   if rank == 0:
     in_path = 'file://'+args.labels
-    mip = 0
     dim_size = tuple(int(d) for d in args.dim_size.split(','))
     print(dim_size)
 
     print("Making meshes...")
     mtq = mpiTaskQueue()
     tasks = tc.create_meshing_tasks(layer_path=in_path,
-                            mip=mip,
+                            mip=args.mip,
                             shape=Vec(*dim_size),
+                            simplification=True,
+                            dust_threshold=args.dust_threshold,
                             mesh_dir='mesh',
                             progress=args.verbose)
     #mtq.insert_all(tasks)

@@ -6,7 +6,8 @@ import numpy as np
 import argparse
 import re
 from tqdm import tqdm
-import skimage
+# import skimage
+from skimage.io import imread
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
 mpi_rank = mpi_comm.Get_rank()
@@ -216,7 +217,7 @@ def main():
     if args.force_range:
       im_list = sorted(glob.glob(os.path.join(args.image_dir, '*.tif')))
       print(im_list)
-      sample_im = skimage.io.imread(im_list[0])
+      sample_im = imread(im_list[0])
       w, h = sample_im.shape
       region = '%dx%d%+d%+d' % (h, w, 0, 0)
 
