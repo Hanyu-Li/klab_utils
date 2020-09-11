@@ -16,7 +16,8 @@ mpi_size = mpi_comm.Get_size()
 def split_aligntxt(align_txt, output_dir):
   with open(align_txt, 'r') as f:
     text = f.readlines()
-  get_key = lambda x: int(re.search(r'S_(\d+)_', x).group(1))
+  # get_key = lambda x: int(re.search(r'S_(\d+)_', x).group(1))
+  get_key = lambda x: int(x.split('\t')[3])
   key_line_dict = {}
   for line in text:
     key = get_key(line)

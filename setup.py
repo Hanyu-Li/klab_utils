@@ -19,6 +19,7 @@ entry_points = {
         # trakem2 related
         'klab_utils.trakem2.preprocess_stack = klab_utils.trakem2.preprocess_stack:main',
         'klab_utils.trakem2.preprocess_tiles = klab_utils.trakem2.preprocess_tiles:main',
+        'klab_utils.trakem2.preprocess_tiles_thermo = klab_utils.trakem2.preprocess_tiles_thermo:main',
         'klab_utils.trakem2.generate_prealign_txt = klab_utils.trakem2.generate_prealign_txt:main',
         'klab_utils.trakem2.rename = klab_utils.trakem2.rename:main',
         'klab_utils.trakem2.mpi_montage = klab_utils.trakem2.mpi_montage:main',

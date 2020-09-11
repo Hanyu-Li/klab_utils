@@ -40,6 +40,7 @@ if ( !f_dir.exists())
 
 ControlWindow.setGUIEnabled(false);
 project = Project.newFSProject("blank", null, dir, false);
+// project = Project.openFSProject(dir + "/project.xml", false);
 loader = project.getLoader();
 loader.setMipMapsRegeneration(false);
 layerset = project.getRootLayerSet();
