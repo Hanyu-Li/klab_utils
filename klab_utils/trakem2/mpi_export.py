@@ -81,11 +81,21 @@ def main():
 
   print(key_sublist)
   #rank_input = os.path.join(args.output, 'align_%d.txt' % mpi_rank)
-  command = '%s -Xms%dg -Xmx%dg --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -Dbbox=%s -- --no-splash %s' % (
-    args.fiji, args.heap_size, args.heap_size, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin, args.bbox,
-    bsh_path)
-  print(command)
-  os.system(command)
+  # command = '%s -Xms%dg -Xmx%dg --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -Dbbox=%s -- --no-splash %s' % (
+  #   args.fiji, args.heap_size, args.heap_size, args.input, args.output, '%d,%d' % (key_sublist[0], key_sublist[-1]), begin, args.bbox,
+  #   bsh_path)
+  # print(command)
+  # os.system(command)
+  for i in range(len(key_sublist) - 1):
+    command = '%s -Xms%dg -Xmx%dg --headless -Dinput=%s -Doutput=%s -Drange=%s -Dbegin=%d -Dbbox=%s -- --no-splash %s' % (
+      args.fiji, args.heap_size, args.heap_size, args.input, args.output, '%d,%d' % (key_sublist[i], key_sublist[i + 1]), begin, args.bbox,
+      bsh_path)
+    os.system(command)
+
+  
+
+
+
 
 if __name__ == '__main__':
   main()

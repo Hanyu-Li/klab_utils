@@ -104,6 +104,7 @@ System.out.println(begin);
 saver = new Saver(".tif");
 // beginning = (int)layerset.getLayer(0).getZ();
 for (i = r0; i<=r1; i++)
+// for (Layer layer: layerRange)
 {
   ind = i - begin;
   layer = layerRange.get(ind);

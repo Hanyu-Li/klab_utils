@@ -50,6 +50,7 @@ def unify_ids(seg_map):
   keys.sort()
   global_max = 0
   for k in keys:
+    if not seg_map[k]: continue
     seg_map[k]['global_offset'] = global_max
     global_max += seg_map[k]['local_max']
 
@@ -81,6 +82,7 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices, post
   for i in pbar:
     seg_path = seg_list[i]
     if not len(glob.glob(os.path.join(seg_path, '**/*.npz'), recursive=True)):
+      seg_map[i] = {}
       continue
     seg, offset_zyx = load_inference(seg_path)
     offset_xyz = offset_zyx[::-1]
@@ -112,7 +114,7 @@ def get_seg_map(input_dir, output_dir, resolution, chunk_size, sub_indices, post
 
 def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, factor=(2,2,1), dtype='uint32'):
   cv_args = dict(
-    bounded=True, fill_missing=False, autocrop=False,
+    bounded=False, fill_missing=True, autocrop=False,
     cache=False, compress_cache=None, cdn_cache=False,
     progress=False, provenance=None, compress=True, 
     non_aligned_writes=True, parallel=False)
@@ -139,6 +141,7 @@ def update_ids_and_write(seg_map, sub_indices, verbose=False):
   else:
     pbar = sub_indices
   for k in pbar:
+    if not seg_map[k]: continue
     s = seg_map[k]['input']
     seg, offset_zyx = load_inference(s)
     offset_xyz = offset_zyx[::-1]
@@ -157,12 +160,11 @@ def update_ids_and_write(seg_map, sub_indices, verbose=False):
 
     # convert to precomputed
     precomputed_path = seg_map[k]['output']
-    #seg_map[i] = (bbox, precomputed_path)
     resolution = seg_map[k]['resolution']
     chunk_size = seg_map[k]['chunk_size']
     cv = prepare_precomputed(precomputed_path, offset_xyz, size_xyz, resolution, chunk_size)
     cv[bbox] = seg
-    logging.warning('finished cv writing %d', k)
+
 
 def main():
   parser = argparse.ArgumentParser()
@@ -174,7 +176,7 @@ def main():
   parser.add_argument('--chunk_size', type=str, default='256,256,64')
   parser.add_argument('--relabel', type=bool, default=True)
   parser.add_argument('--post_clean_up', type=bool, default=False)
-  parser.add_argument('--verbose', type=bool, default=True)
+  parser.add_argument('--verbose', action='store_true')
   args = parser.parse_args()
   resolution = [int(i) for i in args.resolution.split(',')]
   chunk_size = [int(i) for i in args.chunk_size.split(',')]
@@ -185,6 +187,7 @@ def main():
   # step 1: MPI read and get local_max
   if mpi_rank == 0:
     seg_list = glob.glob(os.path.join(args.input, 'seg-*'))
+    # seg_list = glob.glob(os.path.join(args.input, '*/*/seg-*npz'))
     # seg_list.sort()
     os.makedirs(args.output, exist_ok=True)
     sub_indices = np.array_split(np.arange(len(seg_list)), mpi_size)

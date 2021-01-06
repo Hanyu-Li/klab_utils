@@ -1,4 +1,4 @@
-'''Second Stage in reconciliate of ffn inference sub volumes.
+'''Fourth Stage in reconciliate of ffn inference sub volumes.
 
 Workflow:
 1. Assume object ids in subvols are globally unique as output from first stage.
@@ -41,6 +41,7 @@ import json
 import pickle
 import sys
 import time
+import h5py
 
 from mpi4py import MPI
 mpi_comm = MPI.COMM_WORLD
@@ -69,22 +70,28 @@ def get_merge_dict(G):
 
 
 
-def perform_remap(a, relabel_map):
-  remapped_a = fastremap.remap(a, relabel_map, preserve_missing_labels=True) 
-  return remapped_a
 
-def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, factor=(2,2,1), dtype='uint32'):
+def prepare_precomputed(
+  precomputed_path, 
+  offset, 
+  size, 
+  resolution, 
+  chunk_size, 
+  factor=(2,2,1), 
+  dtype='uint32',
+  parallel=False
+  ):
   cv_args = dict(
     bounded=True, fill_missing=False, autocrop=False,
     cache=False, compress_cache=None, cdn_cache=False,
     progress=False, provenance=None, compress=True, 
-    non_aligned_writes=True, parallel=True)
+    non_aligned_writes=True, parallel=parallel)
   info = CloudVolume.create_new_info(
     num_channels=1,
     layer_type='segmentation',
     data_type=dtype,
-    # encoding='compressed_segmentation',
-    encoding='raw',
+    encoding='compressed_segmentation',
+    # encoding='raw',
     resolution=list(resolution),
     voxel_offset=np.array(offset),
     volume_size=np.array(size),
@@ -98,18 +105,18 @@ def prepare_precomputed(precomputed_path, offset, size, resolution, chunk_size, 
 def merge_g_op(a, b, datatype):
   return nx.compose(a, b)
 
-def get_union_bbox_and_merge_path(seg_map, merge_output):
-  bbox_list = [v['bbox'] for v in seg_map.values()]
-  minpt = np.min(np.stack([np.array(b.minpt) for b in bbox_list], 0), axis=0)
-  maxpt = np.max(np.stack([np.array(b.maxpt) for b in bbox_list], 0), axis=0)
+# def get_union_bbox_and_merge_path(seg_map, merge_output):
+#   bbox_list = [v['bbox'] for v in seg_map.values()]
+#   minpt = np.min(np.stack([np.array(b.minpt) for b in bbox_list], 0), axis=0)
+#   maxpt = np.max(np.stack([np.array(b.maxpt) for b in bbox_list], 0), axis=0)
   
-  union_offset = minpt
-  union_size = maxpt - minpt
-  union_bbox = Bbox(minpt, maxpt)
-  cv_merge_path = '%s/precomputed-%d_%d_%d_%d_%d_%d/' % (merge_output, 
-                                                         union_offset[0], union_offset[1], union_offset[2],
-                                                         union_size[0],  union_size[1], union_size[2])
-  return union_bbox, cv_merge_path
+#   union_offset = minpt
+#   union_size = maxpt - minpt
+#   union_bbox = Bbox(minpt, maxpt)
+#   cv_merge_path = '%s/precomputed-%d_%d_%d_%d_%d_%d/' % (merge_output, 
+#                                                          union_offset[0], union_offset[1], union_offset[2],
+#                                                          union_size[0],  union_size[1], union_size[2])
+#   return union_bbox, cv_merge_path
 def prewrite(union_bbox, cv_merge_path, resolution, chunk_size):
   union_offset = np.array(union_bbox.minpt)
   union_size = np.array(union_bbox.maxpt) - np.array(union_bbox.minpt)
@@ -136,73 +143,23 @@ def prewrite(union_bbox, cv_merge_path, resolution, chunk_size):
     cv_merge[:,:,z_start:z_start+chunk_size[2]] = np.zeros((padded_union_size[0], padded_union_size[1], chunk_size[2]), dtype=np.uint32)
   logging.info('prewrite_finished')
 
-def remap_and_write(seg_map, union_bbox, cv_merge_path, global_merge_dict, sub_indices):
-  resolution = list(seg_map.values())[0]['resolution']
-  chunk_size = list(seg_map.values())[0]['chunk_size']
-  union_offset = np.array(union_bbox.minpt)
-  union_size = np.array(union_bbox.maxpt) - np.array(union_bbox.minpt)
-  padded_union_size = ((union_size-1) // chunk_size + 1 ) * chunk_size
-  cv_merge = prepare_precomputed(
-    cv_merge_path, 
-    offset=union_offset, 
-    size=padded_union_size, 
-    resolution=resolution, 
-    chunk_size=chunk_size)
-  # Pre paint the cv with 0
-  # cv_merge[union_bbox] = np.zeros((union_size), dtype=np.uint32)
+def get_union_bbox_and_merge_path(seg_map, merge_output, global_offset):
+  seg_map = {k: v for k, v in seg_map.items() if v}
+  bbox_list = [v['bbox'] for v in seg_map.values()]
+  minpt = np.min(np.stack([np.array(b.minpt) for b in bbox_list], 0), axis=0)
+  maxpt = np.max(np.stack([np.array(b.maxpt) for b in bbox_list], 0), axis=0)
   
-  cv_args = dict(
-    bounded=False, fill_missing=True, autocrop=False,
-    cache=False, compress_cache=None, cdn_cache=False,
-    progress=False, provenance=None, compress=False, 
-    non_aligned_writes=True, parallel=False)
-  
-  #val_dict = dict()
-  #print('>>>>rank: %d, map_keys %s' % (mpi_rank, str(seg_map.keys())))
-
-  # pbar = tqdm(seg_map.items(), desc='merging')
-  pbar = tqdm(sub_indices, desc='merging')
-  # for seg_key, seg in pbar:
-  for seg_key in pbar:
-    seg = seg_map[seg_key]
-    bb = seg['bbox']
-    cv = CloudVolume('file://'+seg['output'], mip=0, **cv_args)
-#     val = cv.download_to_shared_memory(np.s_[:], str(i))
-    val = cv[...]
-    # print('keys: %s <-> %s' % (seg_key, global_merge_dict.keys()))
-    if seg_key in global_merge_dict:
-      val = perform_remap(val, global_merge_dict[seg_key])
-    #logging.error('rank %d val_shape: %s, bbox %s', mpi_rank, val.shape, bb)
-    #val_dict[bb] = val
-
-    curr_val = cv_merge[bb][:]
-    non_zeros = curr_val != 0
-    logging.warn('loaded curr val %s', np.sum(non_zeros[:]))
-    val[non_zeros] = curr_val[non_zeros]
-    try:
-      cv_merge[bb] = val
-      logging.warning('finished writing')
-    except:
-      logging.warning('write racing')
-      time.sleep(5)
-      cv_merge[bb] = val
-      logging.warning('rewritten')
-
-
-  return dict(
-    bbox=union_bbox,
-    output=cv_merge_path,
-    resolution=resolution,
-    chunk_size=chunk_size,
-  )
-
+  union_offset = minpt + global_offset
+  union_size = maxpt - minpt
+  # union_bbox = Bbox(minpt, maxpt)
+  union_bbox = Bbox(union_offset, union_offset + union_size)
+  cv_merge_path = '%s/precomputed-%d_%d_%d_%d_%d_%d/' % (merge_output, 
+                                                         union_offset[0], union_offset[1], union_offset[2],
+                                                         union_size[0],  union_size[1], union_size[2])
+  return union_bbox, cv_merge_path
 def get_chunk_bboxes(union_bbox, chunk_size):
-  # union_size = np.array(union_bbox.maxpt) - np.array(union_bbox.minpt)
-  # padded_union_size = ((union_size-1) // chunk_size + 1 ) * chunk_size
   ffn_style_bbox = bounding_box.BoundingBox(
     np.array(union_bbox.minpt), np.array(union_bbox.size3()))
-  # ffn_style_bbox = bounding_box.BoundingBox(
-  #   np.array(union_bbox.minpt), padded_union_size)
 
   calc = bounding_box.OrderlyOverlappingCalculator(
     outer_box=ffn_style_bbox, 
@@ -215,6 +172,42 @@ def get_chunk_bboxes(union_bbox, chunk_size):
     logging.warning('sub_bb: %s', ffn_bb)
   return bbs
 
+def h5_to_cloudvolume(h5_path, cv_path, union_offset, local_sub_bboxes, resolution, 
+  chunk_size, global_offset=(0, 0, 0), flip_h5=False):
+
+  cv_args = dict(
+    bounded=False, fill_missing=True, autocrop=False,
+    cache=False, compress_cache=None, cdn_cache=False,
+    progress=False, provenance=None, compress=True, 
+    non_aligned_writes=False, parallel=False)
+  cv_merge = cloudvolume.CloudVolume('file://' + cv_path, mip=0, **cv_args)
+  with h5py.File(h5_path, 'r') as f:
+    h5_ds = f['output']
+    pbar = tqdm(local_sub_bboxes, desc='h5 to precomputed')
+    for ffn_bb in pbar:
+      abs_offset = ffn_bb.start
+      abs_size = ffn_bb.size
+
+      rel_offset = abs_offset - union_offset
+      rel_size = abs_size
+
+      # logging.warning('write %s %s', abs_offset, abs_size)
+      h5_slc = np.s_[
+        rel_offset[0]:rel_offset[0] + rel_size[0],
+        rel_offset[1]:rel_offset[1] + rel_size[1],
+        rel_offset[2]:rel_offset[2] + rel_size[2]
+      ]
+
+      cv_slc = np.s_[
+        abs_offset[0]:abs_offset[0] + abs_size[0],
+        abs_offset[1]:abs_offset[1] + abs_size[1],
+        abs_offset[2]:abs_offset[2] + abs_size[2],
+        0
+      ]
+
+      cv_merge[cv_slc] = h5_ds[h5_slc]
+  
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('input', type=str, default=None, 
@@ -223,64 +216,71 @@ def main():
     help='output_directory')
   parser.add_argument('--resolution', type=str, default='6,6,40')
   parser.add_argument('--chunk_size', type=str, default='256,256,64')
+  parser.add_argument('--batch_scale', type=int, default=1,
+    help='Controls how much data is loaded from h5 each time, by multiplying chunk_size')
+  parser.add_argument('--global_offset', type=str, default='0,0,0')
+  parser.add_argument('--flip_h5', type=bool, default=False)
+  parser.add_argument('--verbose', type=bool, default=True)
   args = parser.parse_args()
+  if args.verbose:
+    logging.basicConfig(level='DEBUG')
+  else:
+    logging.basicConfig(level='ERROR')
   resolution = [int(i) for i in args.resolution.split(',')]
   chunk_size = [int(i) for i in args.chunk_size.split(',')]
+  global_offset = [int(i) for i in args.global_offset.split(',')]
 
   if args.output is None:
     output = args.input
   config_path = os.path.join(args.input, 'config.pkl')
-  graph_path = os.path.join(args.input, 'graph.pkl')
 
 
   if mpi_rank == 0:
     assert os.path.exists(config_path), 'Run reconciliate_remap first'
-    assert os.path.exists(graph_path), 'Run reconciliate_find_graph first'
     with open(config_path, 'rb') as fp:
       seg_map = pickle.load(fp)
-    with open(graph_path, 'rb') as fp:
-      G_overlap = pickle.load(fp)
     os.makedirs(output, exist_ok=True)
   else:
     seg_map = None
   seg_map = mpi_comm.bcast(seg_map, 0)
     
   merge_output = os.path.join(output, 'agglomerated')
+  h5_path = os.path.join(output, 'intermediate.h5')
 
-  # remove h5 dependency
-  # if os.path.exists(h5_path):
-  #   # already writen h5 path, skip this step
-  #   logging.warning('Found h5 file, skipped h5 writing')
-  # else:
-
-  # (off) perform parallel write to an mpi h5 file to avoid racing
   if mpi_rank == 0:
-    global_remap_dict = get_merge_dict(G_overlap)
-    sub_indices = np.array_split(list(global_remap_dict.keys()), mpi_size)
-    union_bbox, cv_merge_path = get_union_bbox_and_merge_path(seg_map, merge_output)
-    prewrite(union_bbox, cv_merge_path, resolution, chunk_size)
+    union_bbox, cv_merge_path = get_union_bbox_and_merge_path(seg_map, merge_output, global_offset)
+
+    # preset precomputed
+    union_offset = np.array(union_bbox.minpt)
+    union_size = np.array(union_bbox.maxpt) - np.array(union_bbox.minpt)
+    cv_merge = prepare_precomputed(
+      cv_merge_path, 
+      offset=union_offset, 
+      size=union_size, 
+      resolution=resolution, 
+      chunk_size=chunk_size)
+    
+    # sub divide aligned bboxes
+    sub_bbox_size = [i * args.batch_scale for i in chunk_size]
+
+    bbs = get_chunk_bboxes(union_bbox, sub_bbox_size)
+    sub_bbs = np.array_split(bbs, mpi_size) 
+    logging.warn('write shapes %s %s', union_bbox, sub_bbox_size)
 
   else:
-    global_remap_dict = None
-    sub_indices = None
-    union_bbox = None
+    # union_bbox = None
+    union_offset = None
     cv_merge_path = None
+    sub_bbs = None
 
-  global_remap_dict = mpi_comm.bcast(global_remap_dict, 0)
-  sub_indices = mpi_comm.scatter(sub_indices, 0)
-  union_bbox = mpi_comm.bcast(union_bbox, 0)
+
+  union_offset = mpi_comm.bcast(union_offset, 0)
   cv_merge_path = mpi_comm.bcast(cv_merge_path, 0)
+  sub_bbs = mpi_comm.scatter(sub_bbs, 0)
 
-  remap_and_write(seg_map, union_bbox, cv_merge_path, global_remap_dict, sub_indices)
-
-
-  # final stage: write from h5 to a cloud volume 
-  mpi_comm.barrier()
-
+  h5_to_cloudvolume(h5_path, cv_merge_path, union_offset, sub_bbs, 
+    resolution, chunk_size, args.flip_h5)
   sys.exit()
-  
-  
-
 
 
 if __name__ == '__main__':
